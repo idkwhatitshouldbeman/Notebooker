@@ -43,6 +43,9 @@ class GPT4AllBackend(LLMBackend):
             # Use a smaller model for Render deployment
             self.model = GPT4All("gpt4all-falcon-q4_0.gguf", allow_download=True)
             logger.info(f"GPT4All model {self.model_name} initialized successfully")
+        except ImportError:
+            logger.warning("GPT4All not available - using fallback mode")
+            self.model = None
         except Exception as e:
             logger.error(f"Failed to initialize GPT4All: {e}")
             self.model = None
@@ -85,6 +88,10 @@ class TransformersBackend(LLMBackend):
                 self.tokenizer.pad_token = self.tokenizer.eos_token
             
             logger.info(f"Transformers model {self.model_name} initialized successfully")
+        except ImportError:
+            logger.warning("Transformers not available - using fallback mode")
+            self.model = None
+            self.tokenizer = None
         except Exception as e:
             logger.error(f"Failed to initialize Transformers model: {e}")
             self.model = None
