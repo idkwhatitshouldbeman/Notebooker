@@ -4,13 +4,13 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Dashboard</h1>
+    <h1 class="h2 text-primary"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
-            <a href="{{ url_for('draft') }}" class="btn btn-sm btn-outline-secondary">
+            <a href="{{ url_for('draft') }}" class="btn btn-sm btn-outline-primary">
                 <i class="fas fa-plus"></i> New Section
             </a>
-            <a href="{{ url_for('analyze') }}" class="btn btn-sm btn-outline-secondary">
+            <a href="{{ url_for('analyze') }}" class="btn btn-sm btn-outline-info">
                 <i class="fas fa-search"></i> Analyze
             </a>
         </div>
@@ -20,34 +20,46 @@
 <!-- Status Cards -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card text-center">
+        <div class="card text-center status-card">
             <div class="card-body">
-                <h5 class="card-title text-primary">{{ status.total_sections }}</h5>
-                <p class="card-text">Total Sections</p>
+                <div class="status-icon mb-3">
+                    <i class="fas fa-file-alt fa-2x text-primary"></i>
+                </div>
+                <h3 class="card-title text-primary mb-1">{{ status.total_sections }}</h3>
+                <p class="card-text text-muted">Total Sections</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center">
+        <div class="card text-center status-card">
             <div class="card-body">
-                <h5 class="card-title text-warning">{{ status.sections_needing_work }}</h5>
-                <p class="card-text">Need Work</p>
+                <div class="status-icon mb-3">
+                    <i class="fas fa-tools fa-2x text-warning"></i>
+                </div>
+                <h3 class="card-title text-warning mb-1">{{ status.sections_needing_work }}</h3>
+                <p class="card-text text-muted">Need Work</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center">
+        <div class="card text-center status-card">
             <div class="card-body">
-                <h5 class="card-title text-success">{{ status.completed_sections }}</h5>
-                <p class="card-text">Completed</p>
+                <div class="status-icon mb-3">
+                    <i class="fas fa-check-circle fa-2x text-success"></i>
+                </div>
+                <h3 class="card-title text-success mb-1">{{ status.completed_sections }}</h3>
+                <p class="card-text text-muted">Completed</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center">
+        <div class="card text-center status-card">
             <div class="card-body">
-                <h5 class="card-title text-info">{{ status.pending_questions }}</h5>
-                <p class="card-text">Pending Questions</p>
+                <div class="status-icon mb-3">
+                    <i class="fas fa-question-circle fa-2x text-info"></i>
+                </div>
+                <h3 class="card-title text-info mb-1">{{ status.pending_questions }}</h3>
+                <p class="card-text text-muted">Pending Questions</p>
             </div>
         </div>
     </div>
