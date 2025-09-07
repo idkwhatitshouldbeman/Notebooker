@@ -1,156 +1,124 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Notebooker{% endblock %}
+{% block title %}Notebooker - AI-Powered Engineering Notebook{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2 text-primary"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="{{ url_for('draft') }}" class="btn btn-sm btn-outline-primary">
-                <i class="fas fa-plus"></i> New Section
-            </a>
-            <a href="{{ url_for('analyze') }}" class="btn btn-sm btn-outline-info">
-                <i class="fas fa-search"></i> Analyze
-            </a>
+<div class="auth-check-container">
+    <div class="auth-check-card">
+        <div class="auth-check-header">
+            <h1 class="auth-check-title">
+                <i class="fas fa-robot"></i>
+                Notebooker
+            </h1>
+            <p class="auth-check-subtitle">Your AI-Powered Engineering Notebook</p>
+        </div>
+        
+        <div class="auth-check-content">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Checking authentication...</p>
         </div>
     </div>
 </div>
 
-<!-- Status Cards -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-center status-card">
-            <div class="card-body">
-                <div class="status-icon mb-3">
-                    <i class="fas fa-file-alt fa-2x text-primary"></i>
-                </div>
-                <h3 class="card-title text-primary mb-1">{{ status.total_sections }}</h3>
-                <p class="card-text text-muted">Total Sections</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center status-card">
-            <div class="card-body">
-                <div class="status-icon mb-3">
-                    <i class="fas fa-tools fa-2x text-warning"></i>
-                </div>
-                <h3 class="card-title text-warning mb-1">{{ status.sections_needing_work }}</h3>
-                <p class="card-text text-muted">Need Work</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center status-card">
-            <div class="card-body">
-                <div class="status-icon mb-3">
-                    <i class="fas fa-check-circle fa-2x text-success"></i>
-                </div>
-                <h3 class="card-title text-success mb-1">{{ status.completed_sections }}</h3>
-                <p class="card-text text-muted">Completed</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center status-card">
-            <div class="card-body">
-                <div class="status-icon mb-3">
-                    <i class="fas fa-question-circle fa-2x text-info"></i>
-                </div>
-                <h3 class="card-title text-info mb-1">{{ status.pending_questions }}</h3>
-                <p class="card-text text-muted">Pending Questions</p>
-            </div>
-        </div>
-    </div>
-</div>
+<style>
+.auth-check-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
 
-<!-- Quick Actions -->
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('draft') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Create New Section
-                    </a>
-                    <a href="{{ url_for('analyze') }}" class="btn btn-info">
-                        <i class="fas fa-search"></i> Analyze Content Gaps
-                    </a>
-                    <a href="{{ url_for('sections') }}" class="btn btn-secondary">
-                        <i class="fas fa-list"></i> View All Sections
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+.auth-check-card {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(14, 165, 233, 0.2);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(14, 165, 233, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.auth-check-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.auth-check-title i {
+    font-size: 2.2rem;
+    color: var(--primary-blue);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.auth-check-subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+.auth-check-content {
+    color: var(--text-light);
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sessionToken = localStorage.getItem('session_token');
     
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-info-circle"></i> System Status</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Current Focus:</strong> 
-                    <span class="badge bg-secondary">{{ status.current_focus or 'None' }}</span>
-                </p>
-                <p><strong>Last Updated:</strong> {{ status.last_updated }}</p>
-                <p><strong>Status:</strong> 
-                    <span class="badge bg-success">Active</span>
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Activity -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-history"></i> Recent Activity</h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    Welcome to Notebooker! This is your agentic Engineering Notebook writer for robotics.
-                    Start by creating a new section or analyzing existing content for gaps.
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <h6>Getting Started:</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success"></i> Load your EN files</li>
-                            <li><i class="fas fa-check text-success"></i> Analyze for gaps</li>
-                            <li><i class="fas fa-check text-success"></i> Answer questions</li>
-                            <li><i class="fas fa-check text-success"></i> Generate drafts</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-4">
-                        <h6>Features:</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-robot text-primary"></i> LLM Integration</li>
-                            <li><i class="fas fa-search text-info"></i> Gap Analysis</li>
-                            <li><i class="fas fa-edit text-warning"></i> Auto-drafting</li>
-                            <li><i class="fas fa-image text-success"></i> Image Handling</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-4">
-                        <h6>Next Steps:</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-arrow-right text-primary"></i> Create your first section</li>
-                            <li><i class="fas fa-arrow-right text-primary"></i> Run gap analysis</li>
-                            <li><i class="fas fa-arrow-right text-primary"></i> Review planning sheet</li>
-                            <li><i class="fas fa-arrow-right text-primary"></i> Configure settings</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+    if (!sessionToken) {
+        // No session token, redirect to auth
+        window.location.href = '/auth';
+        return;
+    }
+    
+    // Verify session is still valid
+    fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_token: sessionToken })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.valid) {
+            // Session is valid, redirect to dashboard
+            window.location.href = '/dashboard';
+        } else {
+            // Session invalid, redirect to auth
+            localStorage.removeItem('session_token');
+            localStorage.removeItem('username');
+            window.location.href = '/auth';
+        }
+    })
+    .catch(error => {
+        console.error('Session verification error:', error);
+        // On error, redirect to auth
+        localStorage.removeItem('session_token');
+        localStorage.removeItem('username');
+        window.location.href = '/auth';
+    });
+});
+</script>
 {% endblock %}

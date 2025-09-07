@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Notebooker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-robot"></i>
+        Dashboard
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Status Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card status-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-file-alt text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold">EN Files</div>
+                        <div class="text-muted">{{ status.en_files_count }} files</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card status-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-list text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold">Sections</div>
+                        <div class="text-muted">{{ status.sections_count }} sections</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card status-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-brain text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold">AI Interactions</div>
+                        <div class="text-muted">{{ status.llm_interactions_count }} calls</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card status-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock text-info"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold">Last Updated</div>
+                        <div class="text-muted">{{ status.last_updated }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="/sections" class="btn btn-primary w-100">
+                            <i class="fas fa-list"></i>
+                            View Sections
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/analyze" class="btn btn-success w-100">
+                            <i class="fas fa-search"></i>
+                            Analyze Gaps
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/draft" class="btn btn-warning w-100">
+                            <i class="fas fa-edit"></i>
+                            Draft New Entry
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/settings" class="btn btn-info w-100">
+                            <i class="fas fa-cog"></i>
+                            Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Welcome to Notebooker!</h6>
+                            <small>Just now</small>
+                        </div>
+                        <p class="mb-1">Your AI-powered engineering notebook is ready to use.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Getting Started</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <h6 class="mb-1">1. Create Your First Section</h6>
+                        <p class="mb-1">Start by drafting a new engineering notebook section.</p>
+                    </div>
+                    <div class="list-group-item">
+                        <h6 class="mb-1">2. Analyze for Gaps</h6>
+                        <p class="mb-1">Use AI to identify missing information in your content.</p>
+                    </div>
+                    <div class="list-group-item">
+                        <h6 class="mb-1">3. Generate Questions</h6>
+                        <p class="mb-1">Get targeted questions to improve your documentation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function logout() {
+    const sessionToken = localStorage.getItem('session_token');
+    
+    if (sessionToken) {
+        fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ session_token: sessionToken })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                localStorage.removeItem('session_token');
+                localStorage.removeItem('username');
+                window.location.href = '/auth';
+            }
+        })
+        .catch(error => {
+            console.error('Logout error:', error);
+            // Still redirect even if logout fails
+            localStorage.removeItem('session_token');
+            localStorage.removeItem('username');
+            window.location.href = '/auth';
+        });
+    } else {
+        window.location.href = '/auth';
+    }
+}
+
+// Check authentication on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const sessionToken = localStorage.getItem('session_token');
+    if (!sessionToken) {
+        window.location.href = '/auth';
+        return;
+    }
+    
+    // Verify session is still valid
+    fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_token: sessionToken })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.valid) {
+            localStorage.removeItem('session_token');
+            localStorage.removeItem('username');
+            window.location.href = '/auth';
+        } else {
+            // Update UI with user info
+            const username = localStorage.getItem('username');
+            if (username) {
+                document.title = `Dashboard - ${username} - Notebooker`;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Session verification error:', error);
+        localStorage.removeItem('session_token');
+        localStorage.removeItem('username');
+        window.location.href = '/auth';
+    });
+});
+</script>
+{% endblock %}

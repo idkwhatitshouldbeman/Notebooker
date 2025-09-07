@@ -5,6 +5,7 @@ Handles login, signup, and session management
 
 import hashlib
 import secrets
+import json
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
@@ -118,8 +119,8 @@ class AuthManager:
             del self.sessions[session_token]
             return None
         
-        # Get user info
-        user = self.db.get_user_by_username(session['user_id'])
+        # Get user info by ID
+        user = self.get_user_by_id(session['user_id'])
         if not user:
             del self.sessions[session_token]
             return None
@@ -141,7 +142,7 @@ class AuthManager:
     def update_last_login(self, user_id: int):
         """Update user's last login timestamp"""
         try:
-            with self.db.db_path as conn:
+            with self.db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?
@@ -170,7 +171,7 @@ class AuthManager:
             preferences = user['preferences']
             preferences['password_hash'] = new_hash
             
-            with self.db.db_path as conn:
+            with self.db.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     UPDATE users SET preferences = ? WHERE id = ?
@@ -181,13 +182,30 @@ class AuthManager:
         except Exception as e:
             logger.error(f"Failed to change password: {e}")
             return {"success": False, "error": str(e)}
+    
+    def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """Get user by ID"""
+        try:
+            with self.db.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+                row = cursor.fetchone()
+                if row:
+                    user = dict(row)
+                    if isinstance(user.get('preferences'), str):
+                        user['preferences'] = json.loads(user['preferences'])
+                    return user
+                return None
+        except Exception as e:
+            logger.error(f"Failed to get user by ID: {e}")
+            return None
 
 # Example usage
 if __name__ == "__main__":
     from database_manager import SmartNotebookerDB
     
     # Initialize database and auth
-    db = NotebookerDB()
+    db = SmartNotebookerDB()
     auth = AuthManager(db)
     
     # Create a test user

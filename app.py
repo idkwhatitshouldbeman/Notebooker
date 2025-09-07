@@ -2,7 +2,7 @@
 Flask Web Interface for Agentic Engineering Notebook Writer
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 import os
 import json
 from datetime import datetime
@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this in production
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change this in production
 
 # Global instances
 en_writer = None
@@ -37,14 +37,137 @@ def initialize_en_writer():
     auth = AuthManager(db)
     en_writer = OpenRouterENWriter(str(base_dir))
 
+def require_auth(f):
+    """Decorator to require authentication"""
+    def decorated_function(*args, **kwargs):
+        # Check for session token in localStorage (handled by JavaScript)
+        # For now, we'll allow access and handle auth in the frontend
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+@app.route('/auth')
+def auth_page():
+    """Authentication page"""
+    return render_template('auth_standalone.html')
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    """Register a new user"""
+    if not auth:
+        initialize_en_writer()
+    
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'success': False, 'error': 'Username and password are required'})
+        
+        result = auth.create_user(username, email, password)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'user_id': result['user_id'],
+                'username': result['username'],
+                'session_token': result['session_token']
+            })
+        else:
+            return jsonify({'success': False, 'error': result['error']})
+            
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        return jsonify({'success': False, 'error': 'Registration failed'})
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Login user"""
+    if not auth:
+        initialize_en_writer()
+    
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'success': False, 'error': 'Username and password are required'})
+        
+        result = auth.login_user(username, password)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'user_id': result['user_id'],
+                'username': result['username'],
+                'session_token': result['session_token']
+            })
+        else:
+            return jsonify({'success': False, 'error': result['error']})
+            
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        return jsonify({'success': False, 'error': 'Login failed'})
+
+@app.route('/api/auth/verify', methods=['POST'])
+def verify_session():
+    """Verify session token"""
+    if not auth:
+        initialize_en_writer()
+    
+    try:
+        data = request.get_json()
+        session_token = data.get('session_token')
+        
+        if not session_token:
+            return jsonify({'valid': False})
+        
+        user_info = auth.validate_session(session_token)
+        
+        if user_info:
+            return jsonify({'valid': True, 'user': user_info})
+        else:
+            return jsonify({'valid': False})
+            
+    except Exception as e:
+        logger.error(f"Session verification error: {e}")
+        return jsonify({'valid': False})
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    """Logout user"""
+    if not auth:
+        initialize_en_writer()
+    
+    try:
+        data = request.get_json()
+        session_token = data.get('session_token')
+        
+        if session_token:
+            auth.logout_user(session_token)
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        logger.error(f"Logout error: {e}")
+        return jsonify({'success': False, 'error': 'Logout failed'})
+
 @app.route('/')
 def index():
-    """Main dashboard"""
+    """Main dashboard - redirect to auth if not logged in"""
+    return render_template('index.html')
+
+@app.route('/dashboard')
+def dashboard():
+    """Main dashboard (authenticated)"""
     if not en_writer:
         initialize_en_writer()
     
     status = en_writer.en_writer.get_status_summary()
-    return render_template('index.html', status=status)
+    return render_template('dashboard.html', status=status)
 
 @app.route('/sections')
 def sections():
@@ -243,8 +366,11 @@ def settings():
     available_models = en_writer.openrouter.get_available_models()
     current_model = en_writer.openrouter.get_current_model()
     
+    # Convert to list of tuples (index, model) for template
+    available_models_with_index = list(enumerate(available_models))
+    
     return render_template('settings.html', 
-                         available_models=available_models,
+                         available_models=available_models_with_index,
                          current_model=current_model)
 
 @app.route('/api/switch_model', methods=['POST'])
