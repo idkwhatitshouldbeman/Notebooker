@@ -10,7 +10,7 @@ from pathlib import Path
 import logging
 
 from en_writer import ENWriter
-from llm_backend import EnhancedENWriter
+from openrouter_backend import OpenRouterENWriter
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,7 +27,7 @@ def initialize_en_writer():
     global en_writer
     base_dir = Path("en_files")
     base_dir.mkdir(exist_ok=True)
-    en_writer = EnhancedENWriter(str(base_dir))
+    en_writer = OpenRouterENWriter(str(base_dir))
 
 @app.route('/')
 def index():
@@ -232,29 +232,29 @@ def settings():
     if not en_writer:
         initialize_en_writer()
     
-    available_backends = en_writer.llm_manager.get_available_backends()
-    current_backend = en_writer.llm_manager.get_current_backend_name()
+    available_models = en_writer.openrouter.get_available_models()
+    current_model = en_writer.openrouter.get_current_model()
     
     return render_template('settings.html', 
-                         available_backends=available_backends,
-                         current_backend=current_backend)
+                         available_models=available_models,
+                         current_model=current_model)
 
-@app.route('/api/switch_backend', methods=['POST'])
-def switch_backend():
-    """Switch LLM backend"""
+@app.route('/api/switch_model', methods=['POST'])
+def switch_model():
+    """Switch OpenRouter model"""
     if not en_writer:
         initialize_en_writer()
     
     try:
         data = request.get_json()
-        backend_index = data.get('backend_index', 0)
-        success = en_writer.llm_manager.switch_backend(backend_index)
+        model_index = data.get('model_index', 0)
+        success = en_writer.openrouter.switch_model(model_index)
         
         if success:
             return jsonify({'status': 'success', 
-                          'current_backend': en_writer.llm_manager.get_current_backend_name()})
+                          'current_model': en_writer.openrouter.get_current_model()})
         else:
-            return jsonify({'status': 'error', 'message': 'Invalid backend index'})
+            return jsonify({'status': 'error', 'message': 'Invalid model index'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 

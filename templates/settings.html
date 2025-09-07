@@ -16,22 +16,22 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5><i class="fas fa-robot"></i> LLM Backend Settings</h5>
+                <h5><i class="fas fa-robot"></i> OpenRouter LLM Settings</h5>
             </div>
             <div class="card-body">
                 <div class="mb-3">
-                    <label class="form-label">Available Backends</label>
+                    <label class="form-label">Available Models</label>
                     <div class="list-group">
-                        {% for i, backend in available_backends %}
+                        {% for i, model in available_models %}
                         <div class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
-                                <strong>{{ backend }}</strong>
-                                {% if backend == current_backend %}
+                                <strong>{{ model }}</strong>
+                                {% if model == current_model %}
                                 <span class="badge bg-success ms-2">Current</span>
                                 {% endif %}
                             </div>
-                            {% if backend != current_backend %}
-                            <button class="btn btn-sm btn-outline-primary" onclick="switchBackend({{ i }})">
+                            {% if model != current_model %}
+                            <button class="btn btn-sm btn-outline-primary" onclick="switchModel({{ i }})">
                                 Switch
                             </button>
                             {% endif %}
@@ -41,9 +41,9 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Current Backend</label>
+                    <label class="form-label">Current Model</label>
                     <div class="alert alert-info">
-                        <strong>{{ current_backend }}</strong>
+                        <strong>{{ current_model }}</strong>
                     </div>
                 </div>
 
@@ -177,8 +177,8 @@
                         <p class="text-muted">2.3.3</p>
                     </div>
                     <div class="col-md-3">
-                        <h6>LLM Backend</h6>
-                        <p class="text-muted">{{ current_backend }}</p>
+                        <h6>LLM Model</h6>
+                        <p class="text-muted">{{ current_model }}</p>
                     </div>
                     <div class="col-md-3">
                         <h6>Status</h6>
@@ -236,20 +236,20 @@
 
 {% block scripts %}
 <script>
-function switchBackend(backendIndex) {
-    fetch('/api/switch_backend', {
+function switchModel(modelIndex) {
+    fetch('/api/switch_model', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ backend_index: backendIndex })
+        body: JSON.stringify({ model_index: modelIndex })
     })
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
             location.reload();
         } else {
-            alert('Error switching backend: ' + data.message);
+            alert('Error switching model: ' + data.message);
         }
     })
     .catch(error => {
