@@ -40,7 +40,8 @@ class GPT4AllBackend(LLMBackend):
         """Initialize GPT4All model"""
         try:
             from gpt4all import GPT4All
-            self.model = GPT4All(self.model_name)
+            # Use a smaller model for Render deployment
+            self.model = GPT4All("gpt4all-falcon-q4_0.gguf", allow_download=True)
             logger.info(f"GPT4All model {self.model_name} initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize GPT4All: {e}")
