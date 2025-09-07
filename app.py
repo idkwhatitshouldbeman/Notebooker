@@ -1,0 +1,272 @@
+"""
+Flask Web Interface for Agentic Engineering Notebook Writer
+"""
+
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+import os
+import json
+from datetime import datetime
+from pathlib import Path
+import logging
+
+from en_writer import ENWriter
+from llm_backend import EnhancedENWriter
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+app.secret_key = 'your-secret-key-here'  # Change this in production
+
+# Global EN Writer instance
+en_writer = None
+
+def initialize_en_writer():
+    """Initialize the EN Writer with default directory"""
+    global en_writer
+    base_dir = Path("en_files")
+    base_dir.mkdir(exist_ok=True)
+    en_writer = EnhancedENWriter(str(base_dir))
+
+@app.route('/')
+def index():
+    """Main dashboard"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    status = en_writer.en_writer.get_status_summary()
+    return render_template('index.html', status=status)
+
+@app.route('/sections')
+def sections():
+    """View all sections"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    sections = en_writer.en_writer.sections
+    return render_template('sections.html', sections=sections)
+
+@app.route('/analyze')
+def analyze():
+    """Analyze sections for gaps"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    # Load sections if not already loaded
+    if not en_writer.en_writer.sections:
+        en_writer.en_writer.load_en_sections("en_files")
+    
+    gap_analysis = en_writer.en_writer.analyze_sections_for_gaps(en_writer.en_writer.sections)
+    questions = en_writer.generate_contextual_questions(gap_analysis)
+    
+    return render_template('analyze.html', 
+                         gap_analysis=gap_analysis, 
+                         questions=questions)
+
+@app.route('/draft', methods=['GET', 'POST'])
+def draft():
+    """Draft new section"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    if request.method == 'POST':
+        section_name = request.form.get('section_name')
+        user_inputs = {
+            'title': request.form.get('title', section_name),
+            'overview': request.form.get('overview', ''),
+            'technical_details': request.form.get('technical_details', ''),
+            'implementation': request.form.get('implementation', ''),
+            'testing': request.form.get('testing', ''),
+            'results': request.form.get('results', ''),
+            'improvements': request.form.get('improvements', ''),
+            'tags': request.form.get('tags', 'robotics, engineering'),
+            'comment': request.form.get('comment', '')
+        }
+        
+        # Generate draft using LLM
+        draft_content = en_writer.draft_new_entry_with_llm(section_name, user_inputs)
+        
+        # Save the draft
+        en_writer.en_writer.sections[section_name] = draft_content
+        en_writer.en_writer.save_en_files({section_name: draft_content})
+        
+        # Log activity
+        en_writer.en_writer.log_agent_activity(
+            "activity_log.json",
+            {
+                'action': 'draft_created',
+                'section': section_name,
+                'user_inputs': user_inputs
+            }
+        )
+        
+        flash(f'Draft created for section: {section_name}', 'success')
+        return redirect(url_for('sections'))
+    
+    return render_template('draft.html')
+
+@app.route('/rewrite/<section_name>', methods=['GET', 'POST'])
+def rewrite(section_name):
+    """Rewrite existing section"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    if section_name not in en_writer.en_writer.sections:
+        flash(f'Section {section_name} not found', 'error')
+        return redirect(url_for('sections'))
+    
+    if request.method == 'POST':
+        improvement_focus = request.form.get('improvement_focus', 'clarity and technical rigor')
+        original_content = en_writer.en_writer.sections[section_name]
+        
+        # Rewrite using LLM
+        improved_content = en_writer.rewrite_entry_with_llm(original_content, improvement_focus)
+        
+        # Save the improved version
+        en_writer.en_writer.sections[section_name] = improved_content
+        en_writer.en_writer.save_en_files({section_name: improved_content})
+        
+        # Log activity
+        en_writer.en_writer.log_agent_activity(
+            "activity_log.json",
+            {
+                'action': 'section_rewritten',
+                'section': section_name,
+                'improvement_focus': improvement_focus
+            }
+        )
+        
+        flash(f'Section {section_name} has been improved', 'success')
+        return redirect(url_for('sections'))
+    
+    section_content = en_writer.en_writer.sections[section_name]
+    return render_template('rewrite.html', 
+                         section_name=section_name, 
+                         section_content=section_content)
+
+@app.route('/section/<section_name>')
+def view_section(section_name):
+    """View specific section"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    if section_name not in en_writer.en_writer.sections:
+        flash(f'Section {section_name} not found', 'error')
+        return redirect(url_for('sections'))
+    
+    section_content = en_writer.en_writer.sections[section_name]
+    return render_template('view_section.html', 
+                         section_name=section_name, 
+                         section_content=section_content)
+
+@app.route('/planning')
+def planning():
+    """View planning sheet"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    planning_data = en_writer.en_writer.planning_data
+    return render_template('planning.html', planning_data=planning_data)
+
+@app.route('/api/update_planning', methods=['POST'])
+def update_planning():
+    """Update planning sheet via API"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    try:
+        updates = request.get_json()
+        en_writer.en_writer.update_planning_sheet(updates)
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/analyze_content', methods=['POST'])
+def analyze_content():
+    """Analyze content using LLM"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    try:
+        data = request.get_json()
+        content = data.get('content', '')
+        analysis = en_writer.analyze_content_with_llm(content)
+        return jsonify(analysis)
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/backup')
+def backup():
+    """Create backup of current state"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    try:
+        backup_dir = Path("backups")
+        backup_dir.mkdir(exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = backup_dir / f"backup_{timestamp}.json"
+        
+        backup_data = {
+            'sections': en_writer.en_writer.sections,
+            'planning_data': en_writer.en_writer.planning_data,
+            'activity_log': en_writer.en_writer.activity_log,
+            'timestamp': timestamp
+        }
+        
+        with open(backup_file, 'w', encoding='utf-8') as f:
+            json.dump(backup_data, f, indent=2, ensure_ascii=False)
+        
+        flash(f'Backup created: {backup_file}', 'success')
+        return redirect(url_for('index'))
+    
+    except Exception as e:
+        flash(f'Backup failed: {str(e)}', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/settings')
+def settings():
+    """Settings page"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    available_backends = en_writer.llm_manager.get_available_backends()
+    current_backend = en_writer.llm_manager.get_current_backend_name()
+    
+    return render_template('settings.html', 
+                         available_backends=available_backends,
+                         current_backend=current_backend)
+
+@app.route('/api/switch_backend', methods=['POST'])
+def switch_backend():
+    """Switch LLM backend"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    try:
+        data = request.get_json()
+        backend_index = data.get('backend_index', 0)
+        success = en_writer.llm_manager.switch_backend(backend_index)
+        
+        if success:
+            return jsonify({'status': 'success', 
+                          'current_backend': en_writer.llm_manager.get_current_backend_name()})
+        else:
+            return jsonify({'status': 'error', 'message': 'Invalid backend index'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+if __name__ == '__main__':
+    # Create necessary directories
+    Path("en_files").mkdir(exist_ok=True)
+    Path("backups").mkdir(exist_ok=True)
+    Path("static").mkdir(exist_ok=True)
+    Path("templates").mkdir(exist_ok=True)
+    
+    # Initialize EN Writer
+    initialize_en_writer()
+    
+    # Run the app
+    app.run(debug=True, host='0.0.0.0', port=5000)

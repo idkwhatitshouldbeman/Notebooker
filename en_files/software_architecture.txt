@@ -1,0 +1,70 @@
+# Software Architecture
+
+## System Overview
+The software architecture follows a modular design pattern with clear separation of concerns. The system is built on ROS2 (Robot Operating System 2) for distributed computing and real-time communication.
+
+## Core Components
+
+### Navigation Stack
+- **SLAM**: Simultaneous Localization and Mapping using Cartographer
+- **Path Planning**: A* algorithm with dynamic obstacle avoidance
+- **Localization**: AMCL (Adaptive Monte Carlo Localization)
+- **Costmap**: 2D occupancy grid with inflation layers
+
+### Control System
+- **Motor Control**: PID controllers for velocity and position control
+- **Manipulator Control**: Inverse kinematics solver with trajectory planning
+- **Safety System**: Emergency stop and collision detection
+
+### Perception System
+- **Object Detection**: YOLOv8 for real-time object recognition
+- **Depth Processing**: Point cloud processing for 3D object localization
+- **Sensor Fusion**: Kalman filtering for multi-sensor data fusion
+
+## Software Modules
+
+### Navigation Module
+```python
+class NavigationNode(Node):
+    def __init__(self):
+        super().__init__('navigation_node')
+        self.nav_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.costmap_sub = self.create_subscription(
+            OccupancyGrid, '/map', self.costmap_callback, 10)
+```
+
+### Control Module
+- **Motor Controller**: Handles differential drive control
+- **Manipulator Controller**: Manages 6-DOF arm movements
+- **Gripper Controller**: Controls end-effector operations
+
+### Perception Module
+- **Vision Processor**: Real-time image processing pipeline
+- **Object Tracker**: Multi-object tracking with Kalman filters
+- **Scene Understanding**: Spatial relationship analysis
+
+## Data Flow
+1. **Sensor Data**: Raw sensor data from LiDAR, cameras, IMU
+2. **Preprocessing**: Noise filtering and calibration
+3. **Feature Extraction**: Key point detection and object recognition
+4. **Decision Making**: High-level task planning and execution
+5. **Control Output**: Motor commands and manipulator trajectories
+
+## Communication Architecture
+- **Topics**: Asynchronous message passing between nodes
+- **Services**: Synchronous request-response communication
+- **Actions**: Long-running tasks with feedback
+- **Parameters**: Configuration management
+
+## Performance Metrics
+- **Latency**: <100ms for navigation commands
+- **Throughput**: 30 FPS for vision processing
+- **Reliability**: 99.9% uptime in normal operation
+- **Memory Usage**: <2GB RAM for full system
+
+[image 6] - Software architecture diagram
+[image 7] - Data flow visualization
+[image 8] - Performance monitoring dashboard
+
+[TAG: software, architecture, ROS2, navigation, control]
+[COMMENT: Software architecture documented - need to add testing procedures]

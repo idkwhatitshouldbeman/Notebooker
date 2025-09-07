@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Planning Sheet - Notebooker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Planning Sheet</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-outline-primary" onclick="refreshPlanning()">
+            <i class="fas fa-sync"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exclamation-triangle"></i> Sections Needing Work</h5>
+            </div>
+            <div class="card-body">
+                {% if planning_data.sections_needing_work %}
+                    <ul class="list-group list-group-flush">
+                        {% for section in planning_data.sections_needing_work %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ section.replace('_', ' ').title() }}
+                            <span class="badge bg-warning">Needs Work</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <p class="text-muted">No sections need work!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-check-circle"></i> Completed Sections</h5>
+            </div>
+            <div class="card-body">
+                {% if planning_data.completed_sections %}
+                    <ul class="list-group list-group-flush">
+                        {% for section in planning_data.completed_sections %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ section.replace('_', ' ').title() }}
+                            <span class="badge bg-success">Completed</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No completed sections yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-question-circle"></i> User Questions</h5>
+            </div>
+            <div class="card-body">
+                {% if planning_data.user_questions %}
+                    {% for question in planning_data.user_questions %}
+                    <div class="alert alert-info">
+                        <strong>Q:</strong> {{ question.question if question.question else question }}
+                        {% if question.answer %}
+                        <br><strong>A:</strong> {{ question.answer }}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-question fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No questions recorded</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-gavel"></i> Decisions Taken</h5>
+            </div>
+            <div class="card-body">
+                {% if planning_data.decisions_taken %}
+                    {% for decision in planning_data.decisions_taken %}
+                    <div class="alert alert-success">
+                        <strong>Decision:</strong> {{ decision.decision if decision.decision else decision }}
+                        {% if decision.reasoning %}
+                        <br><strong>Reasoning:</strong> {{ decision.reasoning }}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-gavel fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No decisions recorded</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-file-alt"></i> Drafts Produced</h5>
+            </div>
+            <div class="card-body">
+                {% if planning_data.drafts_produced %}
+                    <ul class="list-group list-group-flush">
+                        {% for draft in planning_data.drafts_produced %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ draft.section if draft.section else draft }}
+                            <span class="badge bg-primary">Draft</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No drafts produced yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bullseye"></i> Current Focus</h5>
+            </div>
+            <div class="card-body">
+                {% if planning_data.current_focus %}
+                    <div class="alert alert-primary">
+                        <h6>{{ planning_data.current_focus }}</h6>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-bullseye fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No current focus set</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Planning Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tools"></i> Planning Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <button class="btn btn-primary" onclick="setCurrentFocus()">
+                                <i class="fas fa-bullseye"></i> Set Focus
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <button class="btn btn-info" onclick="addQuestion()">
+                                <i class="fas fa-question"></i> Add Question
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <button class="btn btn-success" onclick="addDecision()">
+                                <i class="fas fa-gavel"></i> Add Decision
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <button class="btn btn-warning" onclick="markCompleted()">
+                                <i class="fas fa-check"></i> Mark Completed
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Planning Summary -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Planning Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <h4 class="text-warning">{{ planning_data.sections_needing_work|length }}</h4>
+                        <small class="text-muted">Need Work</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 class="text-success">{{ planning_data.completed_sections|length }}</h4>
+                        <small class="text-muted">Completed</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 class="text-info">{{ planning_data.user_questions|length }}</h4>
+                        <small class="text-muted">Questions</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 class="text-primary">{{ planning_data.decisions_taken|length }}</h4>
+                        <small class="text-muted">Decisions</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h4 class="text-secondary">{{ planning_data.drafts_produced|length }}</h4>
+                        <small class="text-muted">Drafts</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h6 class="text-muted">{{ planning_data.last_updated }}</h6>
+                        <small class="text-muted">Last Updated</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshPlanning() {
+    location.reload();
+}
+
+function setCurrentFocus() {
+    const focus = prompt("Set current focus:");
+    if (focus) {
+        updatePlanning({ current_focus: focus });
+    }
+}
+
+function addQuestion() {
+    const question = prompt("Add question:");
+    if (question) {
+        const questions = {{ planning_data.user_questions|tojson }};
+        questions.push(question);
+        updatePlanning({ user_questions: questions });
+    }
+}
+
+function addDecision() {
+    const decision = prompt("Add decision:");
+    if (decision) {
+        const decisions = {{ planning_data.decisions_taken|tojson }};
+        decisions.push(decision);
+        updatePlanning({ decisions_taken: decisions });
+    }
+}
+
+function markCompleted() {
+    const section = prompt("Mark section as completed:");
+    if (section) {
+        const completed = {{ planning_data.completed_sections|tojson }};
+        if (!completed.includes(section)) {
+            completed.push(section);
+            updatePlanning({ completed_sections: completed });
+        }
+    }
+}
+
+function updatePlanning(updates) {
+    fetch('/api/update_planning', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert('Error updating planning: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
+}
+</script>
+{% endblock %}

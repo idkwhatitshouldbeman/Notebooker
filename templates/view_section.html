@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section_name.replace('_', ' ').title() }} - Notebooker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ section_name.replace('_', ' ').title() }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('rewrite', section_name=section_name) }}" class="btn btn-sm btn-warning">
+                <i class="fas fa-edit"></i> Rewrite
+            </a>
+            <a href="{{ url_for('sections') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Sections
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-file-alt"></i> Section Content</h5>
+            </div>
+            <div class="card-body">
+                {% if section_content %}
+                    <div class="content-display">
+                        {{ section_content|replace('\n', '<br>')|safe }}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Content</h4>
+                        <p class="text-muted">This section doesn't have any content yet.</p>
+                        <a href="{{ url_for('rewrite', section_name=section_name) }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Content
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Section Info</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Name:</strong> {{ section_name }}</p>
+                <p><strong>Length:</strong> {{ section_content|length }} characters</p>
+                <p><strong>Words:</strong> {{ section_content.split()|length }}</p>
+                <p><strong>Lines:</strong> {{ section_content.split('\n')|length }}</p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-tools"></i> Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('rewrite', section_name=section_name) }}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-edit"></i> Rewrite/Improve
+                    </a>
+                    <button class="btn btn-info btn-sm" onclick="analyzeContent()">
+                        <i class="fas fa-search"></i> Analyze Content
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="copyContent()">
+                        <i class="fas fa-copy"></i> Copy Content
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Content Analysis</h6>
+            </div>
+            <div class="card-body">
+                <div id="content-analysis">
+                    <div class="text-center">
+                        <button class="btn btn-outline-primary btn-sm" onclick="analyzeContent()">
+                            <i class="fas fa-play"></i> Analyze
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Modal -->
+<div class="modal fade" id="analysisModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Content Analysis</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="analysis-results">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Analyzing...</span>
+                        </div>
+                        <p>Analyzing content...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function analyzeContent() {
+    const modal = new bootstrap.Modal(document.getElementById('analysisModal'));
+    modal.show();
+    
+    // Send content for analysis
+    fetch('/api/analyze_content', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            content: `{{ section_content|replace('\n', '\\n')|replace('"', '\\"') }}`
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('analysis-results').innerHTML = `
+            <div class="alert alert-info">
+                <h6>LLM Analysis:</h6>
+                <p>${data.llm_analysis || 'No analysis available'}</p>
+            </div>
+            <div class="alert alert-secondary">
+                <small><strong>Backend:</strong> ${data.backend_used}</small><br>
+                <small><strong>Timestamp:</strong> ${data.timestamp}</small>
+            </div>
+        `;
+    })
+    .catch(error => {
+        document.getElementById('analysis-results').innerHTML = `
+            <div class="alert alert-danger">
+                <h6>Error:</h6>
+                <p>Failed to analyze content: ${error.message}</p>
+            </div>
+        `;
+    });
+}
+
+function copyContent() {
+    const content = `{{ section_content|replace('\n', '\\n')|replace('"', '\\"') }}`;
+    navigator.clipboard.writeText(content).then(() => {
+        // Show success message
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0';
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    Content copied to clipboard!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        setTimeout(() => toast.remove(), 3000);
+    });
+}
+</script>
+{% endblock %}

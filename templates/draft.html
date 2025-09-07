@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Draft New Section - Notebooker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Draft New Section</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('sections') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Sections
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Create New Engineering Notebook Section</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="section_name" class="form-label">Section Name</label>
+                        <input type="text" class="form-control" id="section_name" name="section_name" 
+                               placeholder="e.g., system_overview, hardware_design" required>
+                        <div class="form-text">Use underscores for spaces (e.g., system_overview)</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Display Title</label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               placeholder="e.g., System Overview">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="overview" class="form-label">Overview</label>
+                        <textarea class="form-control" id="overview" name="overview" rows="3" 
+                                  placeholder="Brief overview of this section..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="technical_details" class="form-label">Technical Details</label>
+                        <textarea class="form-control" id="technical_details" name="technical_details" rows="3" 
+                                  placeholder="Technical specifications, requirements, constraints..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="implementation" class="form-label">Implementation</label>
+                        <textarea class="form-control" id="implementation" name="implementation" rows="3" 
+                                  placeholder="Implementation approach, methodology..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="testing" class="form-label">Testing</label>
+                        <textarea class="form-control" id="testing" name="testing" rows="3" 
+                                  placeholder="Testing procedures, validation methods..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="results" class="form-label">Results</label>
+                        <textarea class="form-control" id="results" name="results" rows="3" 
+                                  placeholder="Results, analysis, findings..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="improvements" class="form-label">Future Improvements</label>
+                        <textarea class="form-control" id="improvements" name="improvements" rows="3" 
+                                  placeholder="Future enhancements, optimizations..."></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tags" class="form-label">Tags</label>
+                                <input type="text" class="form-control" id="tags" name="tags" 
+                                       placeholder="robotics, engineering, control" 
+                                       value="robotics, engineering">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="comment" class="form-label">Comments</label>
+                                <input type="text" class="form-control" id="comment" name="comment" 
+                                       placeholder="Additional notes...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('sections') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-magic"></i> Generate Draft
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-lightbulb"></i> Tips for Better Drafts</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        <strong>Be Specific:</strong> Provide detailed technical information
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        <strong>Include Context:</strong> Explain the purpose and scope
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        <strong>Mention Challenges:</strong> Describe problems and solutions
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        <strong>Add Metrics:</strong> Include performance data if available
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Section Types</h6>
+            </div>
+            <div class="card-body">
+                <small>
+                    <strong>Common sections:</strong><br>
+                    • system_overview<br>
+                    • hardware_design<br>
+                    • software_architecture<br>
+                    • control_systems<br>
+                    • sensors<br>
+                    • actuators<br>
+                    • testing_procedures<br>
+                    • results_analysis<br>
+                    • future_improvements
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Content Analysis - Notebooker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Content Gap Analysis</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('sections') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Sections
+        </a>
+    </div>
+</div>
+
+<!-- Gap Analysis Results -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exclamation-triangle"></i> Identified Gaps</h5>
+            </div>
+            <div class="card-body">
+                {% if gap_analysis.missing_sections %}
+                <div class="mb-3">
+                    <h6 class="text-danger">Missing Sections</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for section in gap_analysis.missing_sections %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ section.replace('_', ' ').title() }}
+                            <span class="badge bg-danger">Missing</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if gap_analysis.incomplete_sections %}
+                <div class="mb-3">
+                    <h6 class="text-warning">Incomplete Sections</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for section in gap_analysis.incomplete_sections %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ section.replace('_', ' ').title() }}
+                            <span class="badge bg-warning">Incomplete</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if gap_analysis.technical_gaps %}
+                <div class="mb-3">
+                    <h6 class="text-info">Technical Gaps</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for section in gap_analysis.technical_gaps %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ section.replace('_', ' ').title() }}
+                            <span class="badge bg-info">Needs Detail</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if gap_analysis.unclear_content %}
+                <div class="mb-3">
+                    <h6 class="text-secondary">Unclear Content</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for section in gap_analysis.unclear_content %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ section.replace('_', ' ').title() }}
+                            <span class="badge bg-secondary">Unclear</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if gap_analysis.missing_images %}
+                <div class="mb-3">
+                    <h6 class="text-primary">Needs Images</h6>
+                    <ul class="list-group list-group-flush">
+                        {% for section in gap_analysis.missing_images %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ section.replace('_', ' ').title() }}
+                            <span class="badge bg-primary">Needs Images</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-question-circle"></i> Generated Questions</h5>
+            </div>
+            <div class="card-body">
+                {% if questions %}
+                    {% for question in questions %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-question"></i> {{ question }}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check"></i> No specific questions generated. Your content appears to be well-structured!
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-pie"></i> Analysis Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-danger">{{ gap_analysis.missing_sections|length }}</h4>
+                        <small class="text-muted">Missing</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning">{{ gap_analysis.incomplete_sections|length }}</h4>
+                        <small class="text-muted">Incomplete</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-info">{{ gap_analysis.technical_gaps|length }}</h4>
+                        <small class="text-muted">Technical Gaps</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ gap_analysis.missing_images|length }}</h4>
+                        <small class="text-muted">Need Images</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tools"></i> Recommended Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('draft') }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Create Missing Sections
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('sections') }}" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> Complete Incomplete Sections
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <a href="{{ url_for('planning') }}" class="btn btn-info">
+                                <i class="fas fa-tasks"></i> Update Planning Sheet
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-grid">
+                            <button class="btn btn-secondary" onclick="location.reload()">
+                                <i class="fas fa-sync"></i> Re-analyze
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Analysis -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-microscope"></i> Detailed Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="analysisAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                Gap Analysis Details
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne">
+                            <div class="accordion-body">
+                                <pre class="code-block">{{ gap_analysis|tojson(indent=2) }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

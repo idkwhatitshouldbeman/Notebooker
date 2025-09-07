@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Notebooker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('draft') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-plus"></i> New Section
+            </a>
+            <a href="{{ url_for('analyze') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-search"></i> Analyze
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Status Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-primary">{{ status.total_sections }}</h5>
+                <p class="card-text">Total Sections</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-warning">{{ status.sections_needing_work }}</h5>
+                <p class="card-text">Need Work</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">{{ status.completed_sections }}</h5>
+                <p class="card-text">Completed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info">{{ status.pending_questions }}</h5>
+                <p class="card-text">Pending Questions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('draft') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create New Section
+                    </a>
+                    <a href="{{ url_for('analyze') }}" class="btn btn-info">
+                        <i class="fas fa-search"></i> Analyze Content Gaps
+                    </a>
+                    <a href="{{ url_for('sections') }}" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> View All Sections
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> System Status</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Current Focus:</strong> 
+                    <span class="badge bg-secondary">{{ status.current_focus or 'None' }}</span>
+                </p>
+                <p><strong>Last Updated:</strong> {{ status.last_updated }}</p>
+                <p><strong>Status:</strong> 
+                    <span class="badge bg-success">Active</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Welcome to Notebooker! This is your agentic Engineering Notebook writer for robotics.
+                    Start by creating a new section or analyzing existing content for gaps.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Getting Started:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Load your EN files</li>
+                            <li><i class="fas fa-check text-success"></i> Analyze for gaps</li>
+                            <li><i class="fas fa-check text-success"></i> Answer questions</li>
+                            <li><i class="fas fa-check text-success"></i> Generate drafts</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Features:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-robot text-primary"></i> LLM Integration</li>
+                            <li><i class="fas fa-search text-info"></i> Gap Analysis</li>
+                            <li><i class="fas fa-edit text-warning"></i> Auto-drafting</li>
+                            <li><i class="fas fa-image text-success"></i> Image Handling</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Next Steps:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-arrow-right text-primary"></i> Create your first section</li>
+                            <li><i class="fas fa-arrow-right text-primary"></i> Run gap analysis</li>
+                            <li><i class="fas fa-arrow-right text-primary"></i> Review planning sheet</li>
+                            <li><i class="fas fa-arrow-right text-primary"></i> Configure settings</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
