@@ -8,7 +8,7 @@ import secrets
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
-from cloud_database import CloudNotebookerDB
+from database_manager import SmartNotebookerDB
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class AuthManager:
     """Handles user authentication and session management"""
     
-    def __init__(self, db: CloudNotebookerDB):
+    def __init__(self, db: SmartNotebookerDB):
         self.db = db
         self.sessions = {}  # In production, use Redis or database
     
@@ -184,7 +184,7 @@ class AuthManager:
 
 # Example usage
 if __name__ == "__main__":
-    from cloud_database import CloudNotebookerDB
+    from database_manager import SmartNotebookerDB
     
     # Initialize database and auth
     db = NotebookerDB()

@@ -11,7 +11,7 @@ import logging
 
 from en_writer import ENWriter
 from openrouter_backend import OpenRouterENWriter
-from cloud_database import CloudNotebookerDB
+from database_manager import SmartNotebookerDB
 from auth import AuthManager
 
 # Configure logging
@@ -32,8 +32,8 @@ def initialize_en_writer():
     base_dir = Path("en_files")
     base_dir.mkdir(exist_ok=True)
     
-    # Initialize cloud database (PostgreSQL on Render, SQLite locally)
-    db = CloudNotebookerDB()
+    # Initialize smart database (SQLite locally, Supabase if configured)
+    db = SmartNotebookerDB()
     auth = AuthManager(db)
     en_writer = OpenRouterENWriter(str(base_dir))
 
