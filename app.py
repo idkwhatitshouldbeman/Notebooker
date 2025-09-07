@@ -11,6 +11,8 @@ import logging
 
 from en_writer import ENWriter
 from openrouter_backend import OpenRouterENWriter
+from cloud_database import CloudNotebookerDB
+from auth import AuthManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -19,14 +21,20 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # Change this in production
 
-# Global EN Writer instance
+# Global instances
 en_writer = None
+db = None
+auth = None
 
 def initialize_en_writer():
     """Initialize the EN Writer with default directory"""
-    global en_writer
+    global en_writer, db, auth
     base_dir = Path("en_files")
     base_dir.mkdir(exist_ok=True)
+    
+    # Initialize cloud database (PostgreSQL on Render, SQLite locally)
+    db = CloudNotebookerDB()
+    auth = AuthManager(db)
     en_writer = OpenRouterENWriter(str(base_dir))
 
 @app.route('/')
