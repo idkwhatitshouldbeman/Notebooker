@@ -29,6 +29,7 @@
             min-height: 100vh;
         }
 
+
         .sidebar {
             min-height: 100vh;
             background: linear-gradient(180deg, var(--pitch-black) 0%, var(--dark-gray) 100%);
@@ -36,6 +37,7 @@
             box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(10px);
             position: relative;
+            width: 200px; /* Make sidebar smaller */
         }
 
         .sidebar::before {
@@ -51,12 +53,19 @@
 
         .sidebar .nav-link {
             color: var(--text-muted);
-            padding: 0.75rem 1rem;
-            margin: 0.25rem 0.5rem;
+            padding: 0.5rem 0.75rem;
+            margin: 0.2rem 0.3rem;
             border-radius: 0.5rem;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            font-size: 0.9rem;
+        }
+
+        .sidebar .nav-link-large {
+            padding: 0.75rem 1rem;
+            font-size: 1.1rem;
+            font-weight: 500;
         }
 
         .sidebar .nav-link::before {
@@ -90,6 +99,7 @@
         .main-content {
             padding: 2rem;
             background: transparent;
+            margin-left: 200px; /* Account for smaller sidebar */
         }
 
         .card {
@@ -389,6 +399,26 @@
         ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(135deg, var(--accent-blue), var(--light-blue));
         }
+
+        /* Responsive design for smaller sidebar */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: fixed;
+                z-index: 1000;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -396,49 +426,34 @@
         <div class="row">
             <!-- Sidebar -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <div class="text-center mb-4">
-                        <h4><i class="fas fa-robot"></i> Notebooker</h4>
-                        <small class="text-muted">Engineering Notebook Writer</small>
-                    </div>
+                <div class="position-sticky pt-3 d-flex flex-column h-100">
+               <div class="text-center mb-3">
+                   <h5><i class="fas fa-robot"></i> Notebooker</h5>
+               </div>
                     
-                    <ul class="nav flex-column">
+                    <ul class="nav flex-column flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
+                            <a class="nav-link nav-link-large {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
                                 <i class="fas fa-tachometer-alt"></i> Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'sections' %}active{% endif %}" href="{{ url_for('sections') }}">
-                                <i class="fas fa-file-alt"></i> Sections
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'analyze' %}active{% endif %}" href="{{ url_for('analyze') }}">
-                                <i class="fas fa-search"></i> Analyze
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'draft' %}active{% endif %}" href="{{ url_for('draft') }}">
-                                <i class="fas fa-plus"></i> Draft New
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'planning' %}active{% endif %}" href="{{ url_for('planning') }}">
-                                <i class="fas fa-tasks"></i> Planning
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
+                            <a class="nav-link nav-link-large {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
                                 <i class="fas fa-cog"></i> Settings
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('backup') }}">
-                                <i class="fas fa-download"></i> Backup
-                            </a>
-                        </li>
                     </ul>
+                    
+                    <!-- Backup section at bottom -->
+                    <div class="mt-auto">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-large" href="{{ url_for('backup') }}">
+                                    <i class="fas fa-download"></i> Backup
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </nav>
 
@@ -459,6 +474,7 @@
             </main>
         </div>
     </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>

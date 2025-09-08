@@ -134,6 +134,19 @@ class SmartNotebookerDB:
                         )
                     ''')
                     
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS projects (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER,
+                            name TEXT NOT NULL,
+                            description TEXT,
+                            status TEXT DEFAULT 'active',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (user_id) REFERENCES users (id)
+                        )
+                    ''')
+                    
                     conn.commit()
                     logger.info("SQLite tables created successfully")
                 
@@ -274,6 +287,107 @@ class SmartNotebookerDB:
         except Exception as e:
             logger.error(f"Failed to get user stats: {e}")
             return {}
+    
+    def create_project(self, user_id: int, name: str, description: str = None) -> int:
+        """Create a new project"""
+        if self.use_supabase:
+            return self.supabase_db.create_project(user_id, name, description)
+        
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO projects (user_id, name, description)
+                    VALUES (?, ?, ?)
+                ''', (user_id, name, description))
+                project_id = cursor.lastrowid
+                conn.commit()
+                return project_id
+        except Exception as e:
+            logger.error(f"Failed to create project: {e}")
+            return None
+    
+    def get_user_projects(self, user_id: int) -> List[Dict]:
+        """Get all projects for a user"""
+        if self.use_supabase:
+            return self.supabase_db.get_user_projects(user_id)
+        
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT id, name, description, status, created_at, updated_at
+                    FROM projects
+                    WHERE user_id = ?
+                    ORDER BY updated_at DESC
+                ''', (user_id,))
+                
+                projects = []
+                for row in cursor.fetchall():
+                    projects.append({
+                        'id': row[0],
+                        'name': row[1],
+                        'description': row[2],
+                        'status': row[3],
+                        'created_at': row[4],
+                        'updated_at': row[5]
+                    })
+                return projects
+        except Exception as e:
+            logger.error(f"Failed to get user projects: {e}")
+            return []
+    
+    def update_project(self, project_id: int, name: str = None, description: str = None, status: str = None) -> bool:
+        """Update a project"""
+        if self.use_supabase:
+            return self.supabase_db.update_project(project_id, name, description, status)
+        
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Build dynamic update query
+                updates = []
+                params = []
+                
+                if name is not None:
+                    updates.append("name = ?")
+                    params.append(name)
+                if description is not None:
+                    updates.append("description = ?")
+                    params.append(description)
+                if status is not None:
+                    updates.append("status = ?")
+                    params.append(status)
+                
+                if not updates:
+                    return False
+                
+                updates.append("updated_at = CURRENT_TIMESTAMP")
+                params.append(project_id)
+                
+                query = f"UPDATE projects SET {', '.join(updates)} WHERE id = ?"
+                cursor.execute(query, params)
+                conn.commit()
+                return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Failed to update project: {e}")
+            return False
+    
+    def delete_project(self, project_id: int) -> bool:
+        """Delete a project"""
+        if self.use_supabase:
+            return self.supabase_db.delete_project(project_id)
+        
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM projects WHERE id = ?', (project_id,))
+                conn.commit()
+                return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Failed to delete project: {e}")
+            return False
 
 # Example usage
 if __name__ == "__main__":

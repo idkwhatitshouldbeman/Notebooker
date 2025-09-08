@@ -2,7 +2,7 @@
 Flask Web Interface for Agentic Engineering Notebook Writer
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, make_response
 import os
 import json
 from datetime import datetime
@@ -14,12 +14,39 @@ from openrouter_backend import OpenRouterENWriter
 from database_manager import SmartNotebookerDB
 from auth import AuthManager
 
+# Import livereload for development
+try:
+    from flask_livereload import LiveReload
+    LIVERELOAD_AVAILABLE = True
+except ImportError:
+    LIVERELOAD_AVAILABLE = False
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change this in production
+
+# Enable template auto-reload in debug mode
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+# Force Jinja2 to reload templates
+app.jinja_env.auto_reload = True
+
+# Add cache control headers for development
+@app.after_request
+def add_header(response):
+    if 'no-cache' not in request.headers.get('Cache-Control', ''):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
+
+# Initialize livereload for development
+if LIVERELOAD_AVAILABLE and app.debug:
+    livereload = LiveReload(app)
+    livereload.watch('templates/')
+    livereload.watch('static/')
 
 # Global instances
 en_writer = None
@@ -99,6 +126,11 @@ def login():
         result = auth.login_user(username, password)
         
         if result['success']:
+            # Set Flask session
+            session['user_id'] = result['user_id']
+            session['username'] = result['username']
+            session['session_token'] = result['session_token']
+            
             return jsonify({
                 'success': True,
                 'user_id': result['user_id'],
@@ -166,8 +198,16 @@ def dashboard():
     if not en_writer:
         initialize_en_writer()
     
+    # Get current user ID from session
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('auth_page'))
+    
+    # Get user's projects from database
+    projects = db.get_user_projects(user_id) if db else []
+    
     status = en_writer.en_writer.get_status_summary()
-    return render_template('dashboard.html', status=status)
+    return render_template('dashboard.html', status=status, projects=projects)
 
 @app.route('/sections')
 def sections():
@@ -327,6 +367,69 @@ def analyze_content():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
+@app.route('/api/projects', methods=['POST'])
+def create_project():
+    """Create a new project"""
+    try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        description = data.get('description', '').strip()
+        
+        if not name:
+            return jsonify({'status': 'error', 'message': 'Project name is required'})
+        
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'status': 'error', 'message': 'Not authenticated'})
+        
+        project_id = db.create_project(user_id, name, description)
+        if project_id:
+            return jsonify({'status': 'success', 'project_id': project_id})
+        else:
+            return jsonify({'status': 'error', 'message': 'Failed to create project'})
+    
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/projects/<int:project_id>', methods=['PUT'])
+def update_project(project_id):
+    """Update a project"""
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        description = data.get('description')
+        status = data.get('status')
+        
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'status': 'error', 'message': 'Not authenticated'})
+        
+        success = db.update_project(project_id, name, description, status)
+        if success:
+            return jsonify({'status': 'success'})
+        else:
+            return jsonify({'status': 'error', 'message': 'Failed to update project'})
+    
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/projects/<int:project_id>', methods=['DELETE'])
+def delete_project(project_id):
+    """Delete a project"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'status': 'error', 'message': 'Not authenticated'})
+        
+        success = db.delete_project(project_id)
+        if success:
+            return jsonify({'status': 'success'})
+        else:
+            return jsonify({'status': 'error', 'message': 'Failed to delete project'})
+    
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
 @app.route('/backup')
 def backup():
     """Create backup of current state"""
@@ -403,7 +506,10 @@ if __name__ == '__main__':
     initialize_en_writer()
     
     # Get port from environment variable (for Render)
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5001))
     
-    # Run the app
-    app.run(debug=False, host='0.0.0.0', port=port)
+    # Run the app with proper auto-reload configuration
+    import os
+    template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+    app.run(debug=True, host='0.0.0.0', port=port, use_reloader=True, use_debugger=True, 
+            extra_files=[template_dir])
