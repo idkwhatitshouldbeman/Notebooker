@@ -227,11 +227,8 @@ function selectProject(projectId) {
     // Store the selected project in localStorage
     localStorage.setItem('selectedProject', projectId);
     
-    // TODO: Redirect to the project workspace
-    // For now, show a message
-    alert('Selected project: ' + projectId + '\n\nThis will redirect to the project workspace in the future.');
-    
-    // Future: window.location.href = '/project/' + projectId;
+    // Redirect to the project workspace
+    window.location.href = '/project/' + projectId;
 }
 
 function editProject(projectId) {
@@ -368,10 +365,6 @@ function submitCreateProject() {
     });
 }
 
-function selectProject(projectId) {
-    // TODO: Navigate to project workspace
-    console.log('Selected project:', projectId);
-}
 
 function editProject(projectId) {
     // TODO: Open edit modal

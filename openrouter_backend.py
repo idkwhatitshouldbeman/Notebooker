@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 class OpenRouterBackend:
     """OpenRouter API backend with multiple free models and fallback"""
     
-    def __init__(self, api_key: str = "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"):
-        self.api_key = api_key
+    def __init__(self, api_key: str = None):
+        # Get API key from environment or use default
+        self.api_key = api_key or os.environ.get('OPENROUTER_API_KEY', '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')
         self.base_url = "https://openrouter.ai/api/v1"
         
         # List of free models in order of preference
@@ -48,7 +49,15 @@ class OpenRouterBackend:
                 'HTTP-Referer': 'http://localhost:5000',
                 'X-Title': 'Notebooker'
             })
-            logger.info("OpenRouter client initialized successfully")
+            
+            # Test the API key with a simple request
+            test_response = self.client.get(f"{self.base_url}/models", timeout=10)
+            if test_response.status_code == 200:
+                logger.info("OpenRouter client initialized successfully")
+            else:
+                logger.warning(f"OpenRouter API key may be invalid: {test_response.status_code}")
+                self.client = None
+                
         except Exception as e:
             logger.error(f"Failed to initialize OpenRouter client: {e}")
             self.client = None
@@ -92,6 +101,8 @@ class OpenRouterBackend:
                     return content.strip()
                 else:
                     logger.warning(f"Model {model} failed with status {response.status_code}: {response.text}")
+                    # Log the full response for debugging
+                    logger.warning(f"Full response: {response.text}")
                 
             except Exception as e:
                 logger.warning(f"Model {model} failed: {e}")
@@ -163,7 +174,10 @@ class OpenRouterBackend:
     
     def _fallback_response(self, prompt: str) -> str:
         """Fallback response when all models fail"""
-        if 'draft' in prompt.lower() or 'create' in prompt.lower():
+        # Check if user is asking about sections specifically
+        if 'how many sections' in prompt.lower() or 'sections do i have' in prompt.lower():
+            return "I can see you have 0 sections in your project right now. You can create your first section by clicking the '+ Create First Section' button on the right, or ask me to help you plan what sections you need."
+        elif 'draft' in prompt.lower() and 'section' in prompt.lower():
             return self._draft_section_template()
         elif 'rewrite' in prompt.lower() or 'improve' in prompt.lower():
             return self._rewrite_content_template()

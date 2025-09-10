@@ -90,13 +90,12 @@ class SmartNotebookerDB:
                     ''')
                     
                     cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS en_files (
+                        CREATE TABLE IF NOT EXISTS projects (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             user_id INTEGER,
-                            filename TEXT NOT NULL,
-                            title TEXT,
-                            content TEXT,
-                            tags TEXT DEFAULT '[]',
+                            name TEXT NOT NULL,
+                            description TEXT,
+                            status TEXT DEFAULT 'active',
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             FOREIGN KEY (user_id) REFERENCES users (id)
@@ -104,9 +103,26 @@ class SmartNotebookerDB:
                     ''')
                     
                     cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS en_files (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER,
+                            project_id INTEGER,
+                            filename TEXT NOT NULL,
+                            title TEXT,
+                            content TEXT,
+                            tags TEXT DEFAULT '[]',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            FOREIGN KEY (user_id) REFERENCES users (id),
+                            FOREIGN KEY (project_id) REFERENCES projects (id)
+                        )
+                    ''')
+                    
+                    cursor.execute('''
                         CREATE TABLE IF NOT EXISTS planning_sheets (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             user_id INTEGER,
+                            project_id INTEGER,
                             en_file_id INTEGER,
                             section_name TEXT,
                             status TEXT DEFAULT 'draft',
@@ -116,6 +132,7 @@ class SmartNotebookerDB:
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                             FOREIGN KEY (user_id) REFERENCES users (id),
+                            FOREIGN KEY (project_id) REFERENCES projects (id),
                             FOREIGN KEY (en_file_id) REFERENCES en_files (id)
                         )
                     ''')
@@ -134,18 +151,18 @@ class SmartNotebookerDB:
                         )
                     ''')
                     
-                    cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS projects (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            user_id INTEGER,
-                            name TEXT NOT NULL,
-                            description TEXT,
-                            status TEXT DEFAULT 'active',
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            FOREIGN KEY (user_id) REFERENCES users (id)
-                        )
-                    ''')
+                    # Add missing columns to existing tables if they don't exist
+                    try:
+                        cursor.execute('ALTER TABLE en_files ADD COLUMN project_id INTEGER')
+                        logger.info("Added project_id column to en_files table")
+                    except sqlite3.OperationalError:
+                        pass  # Column already exists
+                    
+                    try:
+                        cursor.execute('ALTER TABLE planning_sheets ADD COLUMN project_id INTEGER')
+                        logger.info("Added project_id column to planning_sheets table")
+                    except sqlite3.OperationalError:
+                        pass  # Column already exists
                     
                     conn.commit()
                     logger.info("SQLite tables created successfully")
@@ -196,18 +213,18 @@ class SmartNotebookerDB:
             logger.error(f"Failed to get user: {e}")
             return None
     
-    def create_en_file(self, user_id: int, filename: str, title: str = None, content: str = "", tags: List[str] = None) -> int:
+    def create_en_file(self, user_id: int, filename: str, title: str = None, content: str = "", tags: List[str] = None, project_id: int = None) -> int:
         """Create a new EN file"""
         if self.use_supabase:
-            return self.supabase_db.create_en_file(user_id, filename, title, content, tags)
+            return self.supabase_db.create_en_file(user_id, filename, title, content, tags, project_id)
         
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    INSERT INTO en_files (user_id, filename, title, content, tags)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (user_id, filename, title, content, json.dumps(tags or [])))
+                    INSERT INTO en_files (user_id, project_id, filename, title, content, tags)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (user_id, project_id, filename, title, content, json.dumps(tags or [])))
                 file_id = cursor.lastrowid
                 conn.commit()
                 logger.info(f"Created EN file: {filename} (ID: {file_id})")
@@ -388,6 +405,149 @@ class SmartNotebookerDB:
         except Exception as e:
             logger.error(f"Failed to delete project: {e}")
             return False
+    
+    def get_project_by_id(self, project_id: int) -> Optional[Dict]:
+        """Get project by ID"""
+        if self.use_supabase:
+            return self.supabase_db.get_project_by_id(project_id)
+        
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT id, user_id, name, description, status, created_at, updated_at
+                    FROM projects
+                    WHERE id = ?
+                ''', (project_id,))
+                
+                row = cursor.fetchone()
+                if row:
+                    return {
+                        'id': row[0],
+                        'user_id': row[1],
+                        'name': row[2],
+                        'description': row[3],
+                        'status': row[4],
+                        'created_at': row[5],
+                        'updated_at': row[6]
+                    }
+                return None
+        except Exception as e:
+            logger.error(f"Failed to get project by ID: {e}")
+            return None
+    
+    def get_project_en_files(self, project_id: int) -> List[Dict]:
+        """Get all EN files for a specific project"""
+        if self.use_supabase:
+            return self.supabase_db.get_project_en_files(project_id)
+        
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT id, filename, title, content, tags, created_at, updated_at
+                    FROM en_files
+                    WHERE project_id = ?
+                    ORDER BY updated_at DESC
+                ''', (project_id,))
+                
+                files = []
+                for row in cursor.fetchall():
+                    file_dict = {
+                        'id': row[0],
+                        'filename': row[1],
+                        'title': row[2],
+                        'content': row[3],
+                        'tags': json.loads(row[4]) if row[4] else [],
+                        'created_at': row[5],
+                        'updated_at': row[6]
+                    }
+                    files.append(file_dict)
+                return files
+        except Exception as e:
+            logger.error(f"Failed to get project EN files: {e}")
+            return []
+    
+    def get_project_planning(self, project_id: int) -> Dict:
+        """Get planning data for a specific project"""
+        if self.use_supabase:
+            return self.supabase_db.get_project_planning(project_id)
+        
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT section_name, status, content, questions, decisions, created_at, updated_at
+                    FROM planning_sheets
+                    WHERE project_id = ?
+                    ORDER BY updated_at DESC
+                ''', (project_id,))
+                
+                planning_data = {
+                    'sections_needing_work': [],
+                    'user_questions': [],
+                    'decisions_taken': [],
+                    'drafts_produced': [],
+                    'completed_sections': [],
+                    'current_focus': None,
+                    'last_updated': None
+                }
+                
+                for row in cursor.fetchall():
+                    section_name = row[0]
+                    status = row[1]
+                    content = row[2]
+                    questions = json.loads(row[3]) if row[3] else []
+                    decisions = json.loads(row[4]) if row[4] else []
+                    
+                    if status == 'draft':
+                        planning_data['sections_needing_work'].append(section_name)
+                    elif status == 'completed':
+                        planning_data['completed_sections'].append(section_name)
+                    
+                    planning_data['user_questions'].extend(questions)
+                    planning_data['decisions_taken'].extend(decisions)
+                
+                return planning_data
+        except Exception as e:
+            logger.error(f"Failed to get project planning: {e}")
+            return {}
+    
+    def get_project_stats(self, project_id: int) -> Dict:
+        """Get statistics for a specific project"""
+        if self.use_supabase:
+            return self.supabase_db.get_project_stats(project_id)
+        
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Count EN files
+                cursor.execute('SELECT COUNT(*) FROM en_files WHERE project_id = ?', (project_id,))
+                en_files_count = cursor.fetchone()[0]
+                
+                # Count planning sections
+                cursor.execute('SELECT COUNT(*) FROM planning_sheets WHERE project_id = ?', (project_id,))
+                planning_sections_count = cursor.fetchone()[0]
+                
+                # Count completed sections
+                cursor.execute('SELECT COUNT(*) FROM planning_sheets WHERE project_id = ? AND status = "completed"', (project_id,))
+                completed_sections_count = cursor.fetchone()[0]
+                
+                # Count draft sections
+                cursor.execute('SELECT COUNT(*) FROM planning_sheets WHERE project_id = ? AND status = "draft"', (project_id,))
+                draft_sections_count = cursor.fetchone()[0]
+                
+                return {
+                    'en_files_count': en_files_count,
+                    'planning_sections_count': planning_sections_count,
+                    'completed_sections_count': completed_sections_count,
+                    'draft_sections_count': draft_sections_count,
+                    'completion_percentage': (completed_sections_count / max(planning_sections_count, 1)) * 100
+                }
+        except Exception as e:
+            logger.error(f"Failed to get project stats: {e}")
+            return {}
 
 # Example usage
 if __name__ == "__main__":

@@ -460,6 +460,109 @@ def backup():
         flash(f'Backup failed: {str(e)}', 'error')
         return redirect(url_for('index'))
 
+@app.route('/project/<int:project_id>')
+def project_workspace(project_id):
+    """Project workspace - main view for working on a specific project"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    # Get current user ID from session
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('auth_page'))
+    
+    # Get project details
+    project = db.get_project_by_id(project_id) if hasattr(db, 'get_project_by_id') else None
+    if not project:
+        flash('Project not found', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get project-specific EN files
+    project_en_files = db.get_project_en_files(project_id) if hasattr(db, 'get_project_en_files') else []
+    
+    # Get project planning data
+    project_planning = db.get_project_planning(project_id) if hasattr(db, 'get_project_planning') else {}
+    
+    # Get project statistics
+    project_stats = db.get_project_stats(project_id) if hasattr(db, 'get_project_stats') else {}
+    
+    return render_template('project_workspace.html', 
+                         project=project,
+                         project_en_files=project_en_files,
+                         project_planning=project_planning,
+                         project_stats=project_stats)
+
+@app.route('/project/<int:project_id>/sections')
+def project_sections(project_id):
+    """Project-specific sections view"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('auth_page'))
+    
+    project = db.get_project_by_id(project_id) if hasattr(db, 'get_project_by_id') else None
+    if not project:
+        flash('Project not found', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get project-specific sections
+    project_sections = db.get_project_en_files(project_id) if hasattr(db, 'get_project_en_files') else []
+    
+    return render_template('project_sections.html', 
+                         project=project,
+                         sections=project_sections)
+
+@app.route('/project/<int:project_id>/analyze')
+def project_analyze(project_id):
+    """Project-specific content analysis"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('auth_page'))
+    
+    project = db.get_project_by_id(project_id) if hasattr(db, 'get_project_by_id') else None
+    if not project:
+        flash('Project not found', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get project sections for analysis
+    project_sections = db.get_project_en_files(project_id) if hasattr(db, 'get_project_en_files') else []
+    
+    # Run gap analysis on project sections
+    gap_analysis = en_writer.en_writer.analyze_sections_for_gaps(project_sections)
+    questions = en_writer.generate_contextual_questions(gap_analysis)
+    
+    return render_template('project_analyze.html', 
+                         project=project,
+                         gap_analysis=gap_analysis, 
+                         questions=questions)
+
+@app.route('/project/<int:project_id>/planning')
+def project_planning(project_id):
+    """Project-specific planning sheet"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('auth_page'))
+    
+    project = db.get_project_by_id(project_id) if hasattr(db, 'get_project_by_id') else None
+    if not project:
+        flash('Project not found', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Get project planning data
+    project_planning = db.get_project_planning(project_id) if hasattr(db, 'get_project_planning') else {}
+    
+    return render_template('project_planning.html', 
+                         project=project,
+                         planning_data=project_planning)
+
 @app.route('/settings')
 def settings():
     """Settings page"""
@@ -493,6 +596,90 @@ def switch_model():
         else:
             return jsonify({'status': 'error', 'message': 'Invalid model index'})
     except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/chat', methods=['POST'])
+def chat_with_ai():
+    """Chat with AI assistant for project-specific help"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    try:
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        project_id = data.get('project_id')
+        
+        if not message:
+            return jsonify({'status': 'error', 'message': 'Message is required'})
+        
+        # Get current user ID from session (allow unauthenticated for now)
+        user_id = session.get('user_id', 1)  # Default to user 1 for testing
+        
+        # Get project data for context
+        project_context = ""
+        project_sections = []
+        
+        if project_id:
+            project = db.get_project_by_id(project_id) if hasattr(db, 'get_project_by_id') else None
+            if project:
+                project_context = f"Project: {project.get('name', 'Unknown')} - {project.get('description', 'No description')}"
+                project_sections = db.get_project_en_files(project_id) if hasattr(db, 'get_project_en_files') else []
+        
+        # Get user's EN files for context
+        user_en_files = db.get_en_files(user_id) if db else []
+        
+        # Build context for the AI
+        context_info = f"""
+Project Context: {project_context}
+
+Current Project Sections ({len(project_sections)} total):
+"""
+        for section in project_sections[:10]:  # Limit to first 10 sections
+            context_info += f"- {section.get('filename', 'Unknown')}: {section.get('title', 'No title')}\n"
+        
+        if len(project_sections) > 10:
+            context_info += f"... and {len(project_sections) - 10} more sections\n"
+        
+        context_info += f"""
+User's Total EN Files: {len(user_en_files)}
+
+User Message: {message}
+"""
+        
+        # Create a conversational prompt
+        prompt = f"""You are an AI assistant helping with an engineering notebook project. Be conversational and helpful.
+
+{context_info}
+
+The user asked: "{message}"
+
+Respond naturally to the user's message. If they ask about sections, provide specific information about their current sections. If they want to create something new, offer to help. Be friendly and encouraging.
+
+Keep your response concise but helpful. If they ask "how many sections do I have", tell them the exact number and list a few examples. Do NOT provide template content unless specifically asked to create a new section."""
+
+        # Generate AI response using OpenRouter
+        ai_response = en_writer.openrouter.generate_text(prompt, max_tokens=300)
+        
+        # Log the interaction
+        if db:
+            db.log_llm_interaction(
+                user_id=user_id,
+                model_name=en_writer.openrouter.get_current_model(),
+                prompt=prompt,
+                response=ai_response,
+                tokens_used=len(prompt.split()) + len(ai_response.split()),
+                cost=0.0
+            )
+        
+        return jsonify({
+            'status': 'success',
+            'response': ai_response,
+            'project_sections_count': len(project_sections),
+            'total_en_files': len(user_en_files)
+        })
+        
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
         return jsonify({'status': 'error', 'message': str(e)})
 
 if __name__ == '__main__':
