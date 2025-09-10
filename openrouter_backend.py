@@ -177,6 +177,33 @@ class OpenRouterBackend:
         # Check if user is asking about sections specifically
         if 'how many sections' in prompt.lower() or 'sections do i have' in prompt.lower():
             return "I can see you have 0 sections in your project right now. You can create your first section by clicking the '+ Create First Section' button on the right, or ask me to help you plan what sections you need."
+        elif 'vex' in prompt.lower() or 'en' in prompt.lower() or 'engineering notebook' in prompt.lower():
+            if 'team' in prompt.lower():
+                return """Perfect! Since you have a VEX team, let's create a comprehensive engineering notebook for your team's robot project. 
+
+For a VEX team, you'll typically need sections covering:
+- Team overview and robot design goals
+- Design process and brainstorming
+- Technical specifications and CAD work
+- Programming and autonomous code
+- Testing and competition results
+- Iterations and improvements
+
+Would you like me to create all the standard VEX engineering notebook sections for your team? I can set up a complete structure that covers everything from initial design to competition analysis."""
+            else:
+                return """Great! I'd love to help you create a complete engineering notebook. 
+
+For a VEX project, you'll typically need sections covering:
+- Project overview and goals
+- Design process and brainstorming  
+- Technical specifications
+- CAD models and drawings
+- Programming and code
+- Testing and iterations
+- Competition results and analysis
+- Future improvements
+
+Would you like me to create all these sections for you? I can set up a complete VEX engineering notebook structure right now."""
         elif 'draft' in prompt.lower() and 'section' in prompt.lower():
             return self._draft_section_template()
         elif 'rewrite' in prompt.lower() or 'improve' in prompt.lower():

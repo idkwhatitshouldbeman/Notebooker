@@ -3,21 +3,6 @@
 {% block title %}{{ project.name }} - Project Workspace{% endblock %}
 
 {% block content %}
-<!-- Show project quick actions in sidebar -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const quickActions = document.getElementById('project-quick-actions');
-        if (quickActions) {
-            quickActions.style.display = 'block';
-            
-            // Update links with project ID
-            const projectId = {{ project.id }};
-            document.getElementById('view-sections-link').href = `/project/${projectId}/sections`;
-            document.getElementById('analyze-link').href = `/project/${projectId}/analyze`;
-            document.getElementById('planning-link').href = `/project/${projectId}/planning`;
-        }
-    });
-</script>
 <!-- Project Header with Breadcrumbs -->
 <div class="d-flex justify-content-between align-items-center pt-2 pb-2 mb-2 border-bottom">
     <div class="d-flex align-items-center flex-grow-1">
@@ -156,7 +141,7 @@
 <div class="tab-content" id="projectTabContent">
     <!-- Overview Tab -->
     <div class="tab-pane fade show active" id="overview" role="tabpanel">
-        <div class="row h-100">
+        <div class="row" style="height: calc(100vh - 200px);">
             <!-- AI Chat Interface (Left Side) -->
             <div class="col-md-7">
                 <div class="card h-100">
@@ -165,6 +150,9 @@
                             <i class="fas fa-robot"></i> AI Assistant
                         </h5>
                         <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-success" onclick="createVEXSections()" id="create-sections-btn" style="display: none;">
+                                <i class="fas fa-plus"></i> Create Sections
+                            </button>
                             <button class="btn btn-outline-primary" onclick="clearChat()">
                                 <i class="fas fa-trash"></i> Clear
                             </button>
@@ -173,17 +161,17 @@
                             </button>
                         </div>
                     </div>
-                    <div class="card-body d-flex flex-column p-0">
+                    <div class="card-body d-flex flex-column p-0 h-100">
                         <!-- Chat Messages Area -->
-                        <div id="chat-messages" class="flex-grow-1 p-3" style="height: 400px; overflow-y: auto;">
+                        <div id="chat-messages" class="flex-grow-1 p-3" style="min-height: 0; overflow-y: auto;">
                             <div class="chat-message ai-message mb-3">
                                 <div class="d-flex align-items-start">
                                     <div class="avatar me-3">
                                         <i class="fas fa-robot text-primary"></i>
                                     </div>
-                                    <div class="message-content">
+                                    <div class="message-content flex-grow-1">
                                         <div class="message-bubble">
-                                            <p class="mb-0">Hey there! 👋 I'm your AI assistant for the <strong>{{ project.name }}</strong> project. Describe what we're working on today? I can help you with sections, planning, or answer any questions you have about your project.</p>
+                                            <p class="mb-0">Hey! What's up? I'm here to help with your <strong>{{ project.name }}</strong> project. What are we tackling today?</p>
                                         </div>
                                         <small class="text-muted">Just now</small>
                                     </div>
@@ -192,7 +180,7 @@
                         </div>
                         
                         <!-- Chat Input Area -->
-                        <div class="border-top p-3">
+                        <div class="border-top p-3 flex-shrink-0">
                             <div class="input-group">
                                 <input type="text" id="chat-input" class="form-control" placeholder="Ask me anything about your project..." onkeypress="handleChatKeyPress(event)">
                                 <button class="btn btn-primary" onclick="sendMessage()">
@@ -435,6 +423,67 @@
 </div>
 
 <style>
+/* Chat Layout Improvements */
+#chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.chat-message {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.message-content {
+    max-width: 100%;
+    word-wrap: break-word;
+    display: flex;
+    flex-direction: column;
+}
+
+.message-bubble {
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    max-width: fit-content;
+    word-wrap: break-word;
+    line-height: 1.4;
+    display: inline-block;
+}
+
+.ai-message .message-bubble {
+    background-color: var(--medium-gray);
+    color: var(--text-primary);
+    border-bottom-left-radius: 0.25rem;
+}
+
+.user-message .message-bubble {
+    background-color: var(--primary-blue);
+    color: white;
+    border-bottom-right-radius: 0.25rem;
+    margin-left: auto;
+    max-width: fit-content;
+}
+
+.avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ai-message .avatar {
+    background-color: rgba(14, 165, 233, 0.1);
+}
+
+.user-message .avatar {
+    background-color: var(--medium-gray);
+}
+
 .stats-card {
     background: linear-gradient(145deg, var(--dark-gray), var(--medium-gray));
     border: 1px solid rgba(14, 165, 233, 0.2);
@@ -743,6 +792,15 @@ function sendMessage() {
         hideTypingIndicator();
         if (data.status === 'success') {
             addMessageToChat(data.response, 'ai');
+            
+            // Show create sections button if AI suggests creating sections
+            if (data.response.toLowerCase().includes('create sections') || 
+                data.response.toLowerCase().includes('table of contents') ||
+                data.response.toLowerCase().includes('planning is complete') ||
+                data.response.toLowerCase().includes('create all these sections') ||
+                data.response.toLowerCase().includes('set up a complete')) {
+                document.getElementById('create-sections-btn').style.display = 'inline-block';
+            }
         } else {
             addMessageToChat('Sorry, I encountered an error. Please try again.', 'ai');
             console.error('Chat API error:', data.message);
@@ -829,13 +887,59 @@ function clearChat() {
                 </div>
                 <div class="message-content">
                     <div class="message-bubble">
-                        <p class="mb-0">Hey there! 👋 I'm your AI assistant for the <strong>{{ project.name }}</strong> project. Describe what we're working on today? I can help you with sections, planning, or answer any questions you have about your project.</p>
+                        <p class="mb-0">Hey! What's up? I'm here to help with your <strong>{{ project.name }}</strong> project. What are we tackling today?</p>
                     </div>
                     <small class="text-muted">Just now</small>
                 </div>
             </div>
         </div>
     `;
+}
+
+function createVEXSections() {
+    const sections = [
+        { name: "Project Overview & Goals", description: "Introduction to the VEX project, objectives, and success criteria" },
+        { name: "Design Process & Brainstorming", description: "Initial ideas, brainstorming sessions, and design evolution" },
+        { name: "Technical Specifications", description: "Detailed technical requirements, constraints, and specifications" },
+        { name: "CAD Models & Drawings", description: "3D models, technical drawings, and design documentation" },
+        { name: "Programming & Code", description: "Robot programming, code structure, and software development" },
+        { name: "Testing & Iterations", description: "Testing procedures, results, and design iterations" },
+        { name: "Competition Results & Analysis", description: "Competition performance, data analysis, and lessons learned" },
+        { name: "Future Improvements", description: "Planned improvements, next steps, and recommendations" }
+    ];
+    
+    // Show loading message
+    addMessageToChat("Creating your VEX project sections...", 'ai');
+    
+    fetch('/api/create_sections', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            project_id: {{ project.id if project else 'null' }},
+            sections: sections
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            addMessageToChat(`Great! I've created ${data.count} sections for your VEX project. You can now see them in the sections list on the right. Each section has a comprehensive structure to help you document your engineering process.`, 'ai');
+            // Hide the create sections button
+            document.getElementById('create-sections-btn').style.display = 'none';
+            // Refresh the page to show new sections
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            addMessageToChat('Sorry, I encountered an error creating the sections. Please try again.', 'ai');
+            console.error('Create sections error:', data.message);
+        }
+    })
+    .catch(error => {
+        addMessageToChat('Sorry, I\'m having trouble creating the sections right now. Please try again.', 'ai');
+        console.error('Create sections error:', error);
+    });
 }
 
 function exportChat() {

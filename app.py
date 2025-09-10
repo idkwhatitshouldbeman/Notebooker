@@ -647,15 +647,35 @@ User Message: {message}
 """
         
         # Create a conversational prompt
-        prompt = f"""You are an AI assistant helping with an engineering notebook project. Be conversational and helpful.
+        prompt = f"""You are an AI assistant helping with engineering notebook projects, especially VEX robotics projects. Be conversational and helpful.
 
 {context_info}
 
 The user asked: "{message}"
 
-Respond naturally to the user's message. If they ask about sections, provide specific information about their current sections. If they want to create something new, offer to help. Be friendly and encouraging.
+Respond naturally to the user's message. Here's how to help:
 
-Keep your response concise but helpful. If they ask "how many sections do I have", tell them the exact number and list a few examples. Do NOT provide template content unless specifically asked to create a new section."""
+1. **Planning Phase**: If they mention planning or want help figuring out what they want, ask them about:
+   - What type of VEX project (robot design, programming, competition prep, etc.)
+   - What specific goals they have
+   - What components or systems they're working with
+   - Timeline and requirements
+
+2. **Table of Contents**: Once you understand their project, suggest a comprehensive table of contents with typical VEX notebook sections like:
+   - Project Overview & Goals
+   - Design Process & Brainstorming
+   - Technical Specifications
+   - CAD Models & Drawings
+   - Programming & Code
+   - Testing & Iterations
+   - Competition Results & Analysis
+   - Future Improvements
+
+3. **Section Creation**: Offer to create the actual sections for them once planning is complete.
+
+4. **Current State**: If they ask about current sections, tell them the exact number and offer to help plan or create new ones.
+
+Be friendly, encouraging, and focus on helping them build a comprehensive VEX engineering notebook."""
 
         # Generate AI response using OpenRouter
         ai_response = en_writer.openrouter.generate_text(prompt, max_tokens=300)
@@ -680,6 +700,78 @@ Keep your response concise but helpful. If they ask "how many sections do I have
         
     except Exception as e:
         logger.error(f"Chat error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/create_sections', methods=['POST'])
+def create_sections():
+    """Create multiple sections for a project based on planning"""
+    if not en_writer:
+        initialize_en_writer()
+    
+    try:
+        data = request.get_json()
+        project_id = data.get('project_id')
+        sections = data.get('sections', [])
+        
+        if not project_id or not sections:
+            return jsonify({'status': 'error', 'message': 'Project ID and sections list are required'})
+        
+        # Get current user ID from session
+        user_id = session.get('user_id', 1)  # Default to user 1 for testing
+        
+        created_sections = []
+        
+        for section in sections:
+            section_name = section.get('name', '')
+            section_description = section.get('description', '')
+            
+            if section_name:
+                # Create the section content using AI
+                content_prompt = f"""Create a comprehensive VEX engineering notebook section titled "{section_name}".
+
+Description: {section_description}
+
+Please create a well-structured section with:
+- Clear overview and objectives
+- Technical details and specifications
+- Implementation approach
+- Testing procedures
+- Results and analysis
+- Future improvements
+- Placeholders for images [image N]
+- Appropriate tags and comments
+
+Format as markdown with proper headings and structure. Make it specific to VEX robotics engineering."""
+
+                section_content = en_writer.openrouter.generate_text(content_prompt, max_tokens=800)
+                
+                # Add metadata
+                enhanced_content = f"{section_content}\n\n[TAG: vex, robotics, engineering, {section_name.lower().replace(' ', '-')}]\n[COMMENT: Generated section for VEX project planning]"
+                
+                # Create the EN file in database
+                file_id = db.create_en_file(
+                    user_id=user_id,
+                    filename=f"{section_name.lower().replace(' ', '_')}.txt",
+                    title=section_name,
+                    content=enhanced_content,
+                    tags=["vex", "robotics", "engineering"],
+                    project_id=project_id
+                )
+                
+                created_sections.append({
+                    'id': file_id,
+                    'name': section_name,
+                    'filename': f"{section_name.lower().replace(' ', '_')}.txt"
+                })
+        
+        return jsonify({
+            'status': 'success',
+            'created_sections': created_sections,
+            'count': len(created_sections)
+        })
+        
+    except Exception as e:
+        logger.error(f"Create sections error: {e}")
         return jsonify({'status': 'error', 'message': str(e)})
 
 if __name__ == '__main__':
