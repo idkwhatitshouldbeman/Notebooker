@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notebooker - Sign In</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #0ea5e9;
+            --accent-blue: #0284c7;
+            --dark-gray: #1e293b;
+            --medium-gray: #334155;
+            --light-gray: #64748b;
+            --text-primary: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark-gray) 0%, var(--medium-gray) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-primary);
+        }
+
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-card {
+            background: linear-gradient(145deg, var(--dark-gray), var(--medium-gray));
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .auth-header {
+            text-align: center;
+            padding: 2rem 2rem 1rem;
+        }
+
+        .auth-icon {
+            font-size: 3rem;
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+        }
+
+        .auth-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .form-control {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--light-gray);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+
+        .form-control:focus {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: var(--primary-blue);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.25);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(14, 165, 233, 0.4);
+        }
+
+        .btn-outline-secondary {
+            border-color: var(--light-gray);
+            color: var(--text-muted);
+            border-radius: 0.5rem;
+        }
+
+        .btn-outline-secondary:hover {
+            background: var(--light-gray);
+            border-color: var(--light-gray);
+            color: var(--text-primary);
+        }
+
+        .alert {
+            border-radius: 0.5rem;
+            border: none;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: #86efac;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+
+        .form-check-label {
+            color: var(--text-muted);
+        }
+
+        .auth-footer {
+            text-align: center;
+            padding: 1rem 2rem 2rem;
+            border-top: 1px solid rgba(14, 165, 233, 0.1);
+            margin-top: 1rem;
+        }
+
+        .auth-footer a {
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+
+        .auth-footer a:hover {
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="auth-card">
+                        <div class="auth-header">
+                            <div class="auth-icon">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <h1 class="auth-title">Notebooker</h1>
+                            <p class="auth-subtitle">Sign in to your engineering notebook</p>
+                        </div>
+
+                        <div class="auth-body px-4">
+                            <!-- Alert Messages -->
+                            <div id="alert-container"></div>
+
+                            <!-- Sign In Form -->
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="loginEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="loginEmail" placeholder="Enter your email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="loginPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="loginPassword" placeholder="Enter your password" required>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                                    <label class="form-check-label" for="rememberMe">
+                                        Remember me
+                                    </label>
+                                </div>
+                                <div class="d-grid mb-3">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Sign Up Form (Hidden by default) -->
+                            <form id="registerForm" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="registerName" class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" id="registerName" placeholder="Enter your full name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="registerEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="registerEmail" placeholder="Enter your email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="registerPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="registerPassword" placeholder="Create a password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirmPassword" class="form-label">Confirm Password</label>
+                                    <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm your password" required>
+                                </div>
+                                <div class="d-grid mb-3">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-user-plus me-2"></i>Create Account
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Toggle Buttons -->
+                            <div class="text-center">
+                                <button type="button" class="btn btn-outline-secondary" id="toggleForms">
+                                    <span id="toggleText">Don't have an account? Sign up</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="auth-footer">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                AI functionality powered by n8n workflows
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Form toggle functionality
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const toggleButton = document.getElementById('toggleForms');
+        const toggleText = document.getElementById('toggleText');
+        const alertContainer = document.getElementById('alertContainer');
+
+        let isLoginMode = true;
+
+        toggleButton.addEventListener('click', function() {
+            isLoginMode = !isLoginMode;
+            
+            if (isLoginMode) {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+                toggleText.textContent = "Don't have an account? Sign up";
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                toggleText.textContent = "Already have an account? Sign in";
+            }
+            
+            clearAlerts();
+        });
+
+        // Show alert function
+        function showAlert(message, type = 'danger') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alertDiv);
+        }
+
+        // Clear alerts function
+        function clearAlerts() {
+            alertContainer.innerHTML = '';
+        }
+
+        // Login form submission
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearAlerts();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1500);
+                } else {
+                    showAlert(data.error || 'Login failed. Please try again.', 'danger');
+                }
+            } catch (error) {
+                showAlert('Network error. Please try again.', 'danger');
+                console.error('Login error:', error);
+            }
+        });
+
+        // Register form submission
+        registerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearAlerts();
+
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showAlert('Passwords do not match.', 'danger');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('Registration successful! Please sign in.', 'success');
+                    // Switch to login form
+                    isLoginMode = true;
+                    loginForm.style.display = 'block';
+                    registerForm.style.display = 'none';
+                    toggleText.textContent = "Don't have an account? Sign up";
+                    
+                    // Pre-fill email
+                    document.getElementById('loginEmail').value = email;
+                } else {
+                    showAlert(data.error || 'Registration failed. Please try again.', 'danger');
+                }
+            } catch (error) {
+                showAlert('Network error. Please try again.', 'danger');
+                console.error('Registration error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
