@@ -647,38 +647,45 @@ User Message: {message}
 """
         
         # Create a conversational prompt
-        prompt = f"""You are an AI assistant helping with engineering notebook projects, especially VEX robotics projects. Be conversational and helpful.
+        prompt = f"""You are an AI assistant helping with VEX engineering notebooks. Be concise and use proper formatting.
 
 {context_info}
 
-The user asked: "{message}"
+User asked: "{message}"
 
-Respond naturally to the user's message. Here's how to help:
+**Instructions:**
+- Keep responses short and to the point
+- Use proper markdown formatting (no asterisks for bullets)
+- Use numbered lists and bullet points correctly
+- Ask 2-3 quick questions max
+- When user says "create sections" or "create them", immediately offer to create sections
+- Be friendly but brief
 
-1. **Planning Phase**: If they mention planning or want help figuring out what they want, ask them about:
-   - What type of VEX project (robot design, programming, competition prep, etc.)
-   - What specific goals they have
-   - What components or systems they're working with
-   - Timeline and requirements
+**For VEX projects, ask:**
+1. What VEX game/challenge?
+2. Main goals?
+3. Timeline?
 
-2. **Table of Contents**: Once you understand their project, suggest a comprehensive table of contents with typical VEX notebook sections like:
-   - Project Overview & Goals
-   - Design Process & Brainstorming
-   - Technical Specifications
-   - CAD Models & Drawings
-   - Programming & Code
-   - Testing & Iterations
-   - Competition Results & Analysis
-   - Future Improvements
+**Standard sections:**
+- Project overview & goals
+- Design process & brainstorming
+- Technical specifications
+- CAD models & drawings
+- Programming & code
+- Testing & iterations
+- Competition results
+- Future improvements
 
-3. **Section Creation**: Offer to create the actual sections for them once planning is complete.
+**Formatting rules:**
+- Use numbered lists (1. 2. 3.) for questions
+- Use bullet points (-) for lists
+- NO asterisks (*) for formatting
+- Keep it conversational but concise
 
-4. **Current State**: If they ask about current sections, tell them the exact number and offer to help plan or create new ones.
-
-Be friendly, encouraging, and focus on helping them build a comprehensive VEX engineering notebook."""
+**Important:** If user says "create sections", "create them", or "make sections", respond with "I'll create the standard VEX engineering notebook sections for you now!" and list the sections."""
 
         # Generate AI response using OpenRouter
-        ai_response = en_writer.openrouter.generate_text(prompt, max_tokens=300)
+        ai_response = en_writer.openrouter.generate_text(prompt, max_tokens=150)
         
         # Log the interaction
         if db:

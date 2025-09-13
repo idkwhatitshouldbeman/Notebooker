@@ -20,8 +20,17 @@ class OpenRouterBackend:
     """OpenRouter API backend with multiple free models and fallback"""
     
     def __init__(self, api_key: str = None):
-        # Get API key from environment or use default
-        self.api_key = api_key or os.environ.get('OPENROUTER_API_KEY', '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')
+        # Multiple API keys to try in order
+        self.api_keys = [
+            api_key or os.environ.get('OPENROUTER_API_KEY'),
+            "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",
+            "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",
+            "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"
+        ]
+        
+        # Filter out None values
+        self.api_keys = [key for key in self.api_keys if key is not None]
+        
         self.base_url = "https://openrouter.ai/api/v1"
         
         # List of free models in order of preference
@@ -35,55 +44,159 @@ class OpenRouterBackend:
         ]
         
         self.current_model_index = 0
+        self.current_api_key_index = 0
         self.client = None
         self._initialize_client()
     
     def _initialize_client(self):
-        """Initialize requests session for OpenRouter"""
-        try:
-            # Use requests directly instead of OpenAI client
-            self.client = requests.Session()
-            self.client.headers.update({
-                'Authorization': f'Bearer {self.api_key}',
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'http://localhost:5000',
-                'X-Title': 'Notebooker'
-            })
-            
-            # Test the API key with a simple request
-            test_response = self.client.get(f"{self.base_url}/models", timeout=10)
-            if test_response.status_code == 200:
-                logger.info("OpenRouter client initialized successfully")
-            else:
-                logger.warning(f"OpenRouter API key may be invalid: {test_response.status_code}")
-                self.client = None
-                
-        except Exception as e:
-            logger.error(f"Failed to initialize OpenRouter client: {e}")
+        """Initialize requests session for OpenRouter with multiple API keys"""
+        if not self.api_keys:
+            logger.warning("No OpenRouter API keys found. Set OPENROUTER_API_KEY environment variable.")
             self.client = None
+            return
+            
+        # Try each API key until one works
+        for i, api_key in enumerate(self.api_keys):
+            try:
+                logger.info(f"Trying API key {i+1}/{len(self.api_keys)}")
+                
+                # Use requests directly instead of OpenAI client
+                self.client = requests.Session()
+                self.client.headers.update({
+                    'Authorization': f'Bearer {api_key}',
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'http://localhost:5000',
+                    'X-Title': 'Notebooker'
+                })
+                
+                # Test the API key with a simple request
+                test_response = self.client.get(f"{self.base_url}/models", timeout=10)
+                if test_response.status_code == 200:
+                    logger.info(f"OpenRouter client initialized successfully with API key {i+1}")
+                    self.current_api_key_index = i
+                    return
+                else:
+                    logger.warning(f"API key {i+1} failed with status {test_response.status_code}")
+                    
+            except Exception as e:
+                logger.warning(f"API key {i+1} failed: {e}")
+        
+        # If all API keys failed
+        logger.error("All OpenRouter API keys failed")
+        self.client = None
     
     def generate_text(self, prompt: str, max_tokens: int = 500) -> str:
-        """Generate text using OpenRouter with automatic fallback"""
+        """Generate text using OpenRouter with automatic fallback and API key switching"""
         if not self.client:
             return "OpenRouter client not available"
         
-        # Try each model in order until one works
-        for attempt in range(len(self.models)):
-            model = self.models[self.current_model_index]
+        # Try each model with current API key, then try other API keys if needed
+        for model_attempt in range(len(self.models)):
+            for api_key_attempt in range(len(self.api_keys)):
+                model = self.models[self.current_model_index]
+                api_key = self.api_keys[self.current_api_key_index]
+                
+                try:
+                    logger.info(f"Trying model: {model} with API key {self.current_api_key_index + 1}")
+                    
+                    # Update headers with current API key
+                    self.client.headers.update({
+                        'Authorization': f'Bearer {api_key}'
+                    })
+                    
+                    # Prepare the request payload
+                    payload = {
+                        "model": model,
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        "max_tokens": max_tokens,
+                        "temperature": 0.7
+                    }
+                    
+                    # Make the API request
+                    response = self.client.post(
+                        f"{self.base_url}/chat/completions",
+                        json=payload,
+                        timeout=30
+                    )
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        content = data['choices'][0]['message']['content']
+                        logger.info(f"Successfully generated text using {model} with API key {self.current_api_key_index + 1}")
+                        return content.strip()
+                    elif response.status_code == 401:
+                        logger.warning(f"API key {self.current_api_key_index + 1} failed with 401, trying next key")
+                        # Switch to next API key
+                        self.current_api_key_index = (self.current_api_key_index + 1) % len(self.api_keys)
+                        continue
+                    else:
+                        logger.warning(f"Model {model} failed with status {response.status_code}: {response.text}")
+                        # Log the full response for debugging
+                        logger.warning(f"Full response: {response.text}")
+                        break  # Try next model
+                
+                except Exception as e:
+                    logger.warning(f"Model {model} with API key {self.current_api_key_index + 1} failed: {e}")
+                    # Try next API key
+                    self.current_api_key_index = (self.current_api_key_index + 1) % len(self.api_keys)
+                    continue
+            
+            # Move to next model
+            self.current_model_index = (self.current_model_index + 1) % len(self.models)
+            
+            # Add delay before trying next model
+            time.sleep(1)
+        
+        # If all models and API keys failed, return fallback response
+        logger.error("All OpenRouter models and API keys failed, using fallback")
+        return self._fallback_response(prompt)
+    
+    def analyze_image(self, image_url: str, prompt: str = "What is in this image?") -> str:
+        """Analyze image using OpenRouter with vision-capable models"""
+        if not self.client:
+            return "OpenRouter client not available"
+        
+        # Use Mistral model for image analysis (it supports vision)
+        vision_model = "mistralai/mistral-small-3.2-24b-instruct:free"
+        
+        # Try with current API key first
+        for api_key_attempt in range(len(self.api_keys)):
+            api_key = self.api_keys[self.current_api_key_index]
             
             try:
-                logger.info(f"Trying model: {model}")
+                logger.info(f"Analyzing image with {vision_model} using API key {self.current_api_key_index + 1}")
                 
-                # Prepare the request payload
+                # Update headers with current API key
+                self.client.headers.update({
+                    'Authorization': f'Bearer {api_key}'
+                })
+                
+                # Prepare the request payload for image analysis
                 payload = {
-                    "model": model,
+                    "model": vision_model,
                     "messages": [
                         {
                             "role": "user",
-                            "content": prompt
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": prompt
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": image_url
+                                    }
+                                }
+                            ]
                         }
                     ],
-                    "max_tokens": max_tokens,
+                    "max_tokens": 500,
                     "temperature": 0.7
                 }
                 
@@ -97,113 +210,82 @@ class OpenRouterBackend:
                 if response.status_code == 200:
                     data = response.json()
                     content = data['choices'][0]['message']['content']
-                    logger.info(f"Successfully generated text using {model}")
+                    logger.info(f"Successfully analyzed image using {vision_model} with API key {self.current_api_key_index + 1}")
                     return content.strip()
+                elif response.status_code == 401:
+                    logger.warning(f"API key {self.current_api_key_index + 1} failed with 401, trying next key")
+                    # Switch to next API key
+                    self.current_api_key_index = (self.current_api_key_index + 1) % len(self.api_keys)
+                    continue
                 else:
-                    logger.warning(f"Model {model} failed with status {response.status_code}: {response.text}")
-                    # Log the full response for debugging
-                    logger.warning(f"Full response: {response.text}")
+                    logger.error(f"Image analysis failed with status {response.status_code}: {response.text}")
+                    return f"Image analysis failed: {response.text}"
                 
             except Exception as e:
-                logger.warning(f"Model {model} failed: {e}")
-            
-            # Move to next model
-            self.current_model_index = (self.current_model_index + 1) % len(self.models)
-            
-            # Add delay before trying next model
-            time.sleep(1)
+                logger.warning(f"Image analysis with API key {self.current_api_key_index + 1} failed: {e}")
+                # Try next API key
+                self.current_api_key_index = (self.current_api_key_index + 1) % len(self.api_keys)
+                continue
         
-        # If all models failed, return fallback response
-        logger.error("All OpenRouter models failed, using fallback")
-        return self._fallback_response(prompt)
-    
-    def analyze_image(self, image_url: str, prompt: str = "What is in this image?") -> str:
-        """Analyze image using OpenRouter with vision-capable models"""
-        if not self.client:
-            return "OpenRouter client not available"
-        
-        # Use Mistral model for image analysis (it supports vision)
-        vision_model = "mistralai/mistral-small-3.2-24b-instruct:free"
-        
-        try:
-            logger.info(f"Analyzing image with {vision_model}")
-            
-            # Prepare the request payload for image analysis
-            payload = {
-                "model": vision_model,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": prompt
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": image_url
-                                }
-                            }
-                        ]
-                    }
-                ],
-                "max_tokens": 500,
-                "temperature": 0.7
-            }
-            
-            # Make the API request
-            response = self.client.post(
-                f"{self.base_url}/chat/completions",
-                json=payload,
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                content = data['choices'][0]['message']['content']
-                logger.info(f"Successfully analyzed image using {vision_model}")
-                return content.strip()
-            else:
-                logger.error(f"Image analysis failed with status {response.status_code}: {response.text}")
-                return f"Image analysis failed: {response.text}"
-            
-        except Exception as e:
-            logger.error(f"Image analysis failed: {e}")
-            return f"Image analysis failed: {str(e)}"
+        return "Image analysis failed: All API keys failed"
     
     def _fallback_response(self, prompt: str) -> str:
         """Fallback response when all models fail"""
         # Check if user is asking about sections specifically
         if 'how many sections' in prompt.lower() or 'sections do i have' in prompt.lower():
             return "I can see you have 0 sections in your project right now. You can create your first section by clicking the '+ Create First Section' button on the right, or ask me to help you plan what sections you need."
-        elif 'vex' in prompt.lower() or 'en' in prompt.lower() or 'engineering notebook' in prompt.lower():
-            if 'team' in prompt.lower():
-                return """Perfect! Since you have a VEX team, let's create a comprehensive engineering notebook for your team's robot project. 
+        elif 'create sections' in prompt.lower() or 'create them' in prompt.lower() or 'make sections' in prompt.lower():
+            return """I'll create the standard VEX engineering notebook sections for you now!
 
-For a VEX team, you'll typically need sections covering:
-- Team overview and robot design goals
-- Design process and brainstorming
-- Technical specifications and CAD work
-- Programming and autonomous code
-- Testing and competition results
-- Iterations and improvements
-
-Would you like me to create all the standard VEX engineering notebook sections for your team? I can set up a complete structure that covers everything from initial design to competition analysis."""
-            else:
-                return """Great! I'd love to help you create a complete engineering notebook. 
-
-For a VEX project, you'll typically need sections covering:
-- Project overview and goals
-- Design process and brainstorming  
+Standard sections:
+- Project overview & goals
+- Design process & brainstorming
 - Technical specifications
-- CAD models and drawings
-- Programming and code
-- Testing and iterations
-- Competition results and analysis
+- CAD models & drawings
+- Programming & code
+- Testing & iterations
+- Competition results
 - Future improvements
 
-Would you like me to create all these sections for you? I can set up a complete VEX engineering notebook structure right now."""
+Creating your sections..."""
+        elif 'vex' in prompt.lower() or 'en' in prompt.lower() or 'engineering notebook' in prompt.lower():
+            if 'team' in prompt.lower():
+                return """Perfect! Let's create your VEX team engineering notebook.
+
+Quick questions:
+1. What VEX game/challenge?
+2. Team size?
+3. Main robot goals?
+4. Timeline?
+
+Standard sections:
+- Team overview & goals
+- Design process & brainstorming
+- Technical specs & CAD
+- Programming & code
+- Testing & results
+- Competition analysis
+
+Want me to create all sections now?"""
+            else:
+                return """Great! Let's build your VEX engineering notebook.
+
+Quick questions:
+1. What VEX project type?
+2. Main goals?
+3. Timeline?
+
+Standard sections:
+- Project overview & goals
+- Design process & brainstorming
+- Technical specifications
+- CAD models & drawings
+- Programming & code
+- Testing & iterations
+- Competition results
+- Future improvements
+
+Want me to create all sections now?"""
         elif 'draft' in prompt.lower() and 'section' in prompt.lower():
             return self._draft_section_template()
         elif 'rewrite' in prompt.lower() or 'improve' in prompt.lower():

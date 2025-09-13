@@ -182,7 +182,7 @@
                         <!-- Chat Input Area -->
                         <div class="border-top p-3 flex-shrink-0">
                             <div class="input-group">
-                                <input type="text" id="chat-input" class="form-control" placeholder="Ask me anything about your project..." onkeypress="handleChatKeyPress(event)">
+                                <textarea id="chat-input" class="form-control" placeholder="Ask me anything about your project..." onkeydown="handleChatKeyPress(event)" rows="1" style="resize: none; min-height: 38px; max-height: 120px;"></textarea>
                                 <button class="btn btn-primary" onclick="sendMessage()">
                                     <i class="fas fa-paper-plane"></i>
                                 </button>
@@ -190,7 +190,7 @@
                             <div class="mt-2">
                                 <small class="text-muted">
                                     <i class="fas fa-lightbulb"></i> 
-                                    Try: "Help me create a new section" or "What sections need work?"
+                                    Try: "Help me create a new section" or "What sections need work?" • Shift+Enter for new lines
                                 </small>
                             </div>
                         </div>
@@ -756,9 +756,18 @@ function cancelEdit(element, originalValue) {
 let selectedSection = null;
 
 function handleChatKeyPress(event) {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
         sendMessage();
+    } else if (event.key === 'Enter' && event.shiftKey) {
+        // Allow Shift+Enter for new lines
+        return;
     }
+    
+    // Auto-resize textarea
+    const textarea = event.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
 }
 
 function sendMessage() {
@@ -770,8 +779,9 @@ function sendMessage() {
     // Add user message to chat
     addMessageToChat(message, 'user');
     
-    // Clear input
+    // Clear input and reset height
     input.value = '';
+    input.style.height = 'auto';
     
     // Show typing indicator
     showTypingIndicator();
@@ -798,7 +808,10 @@ function sendMessage() {
                 data.response.toLowerCase().includes('table of contents') ||
                 data.response.toLowerCase().includes('planning is complete') ||
                 data.response.toLowerCase().includes('create all these sections') ||
-                data.response.toLowerCase().includes('set up a complete')) {
+                data.response.toLowerCase().includes('set up a complete') ||
+                data.response.toLowerCase().includes('ready to create') ||
+                data.response.toLowerCase().includes('proposed engineering') ||
+                data.response.toLowerCase().includes('standard sections')) {
                 document.getElementById('create-sections-btn').style.display = 'inline-block';
             }
         } else {
@@ -824,6 +837,15 @@ function addMessageToChat(message, sender) {
     
     const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     
+    // Convert markdown-like formatting to HTML
+    let formattedMessage = message
+        .replace(/\n/g, '<br>')  // Convert line breaks to <br>
+        .replace(/^(\d+\.\s)/gm, '<br>$1')  // Add line breaks before numbered lists
+        .replace(/^(-\s)/gm, '<br>$1')  // Add line breaks before bullet points
+        .replace(/^(<br>)+/, '')  // Remove leading <br> tags
+        .replace(/(<br>)+$/, '')  // Remove trailing <br> tags
+        .replace(/(<br>){2,}/g, '<br><br>');  // Limit consecutive <br> tags
+    
     messageDiv.innerHTML = `
         <div class="d-flex align-items-start">
             <div class="avatar me-3">
@@ -831,7 +853,7 @@ function addMessageToChat(message, sender) {
             </div>
             <div class="message-content">
                 <div class="message-bubble">
-                    <p class="mb-0">${message}</p>
+                    <div class="mb-0">${formattedMessage}</div>
                 </div>
                 <small class="text-muted">${time}</small>
             </div>
