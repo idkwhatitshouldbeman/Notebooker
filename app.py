@@ -189,7 +189,7 @@ def logout():
 @app.route('/')
 def index():
     """Main dashboard - redirect to auth if not logged in"""
-    return render_template('index.html')
+    return redirect(url_for('auth_page'))
 
 @app.route('/dashboard')
 def dashboard():
