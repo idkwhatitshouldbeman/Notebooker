@@ -10,7 +10,6 @@ from pathlib import Path
 import logging
 
 from en_writer import ENWriter
-from openrouter_backend import OpenRouterENWriter
 from database_manager import SmartNotebookerDB
 from auth import AuthManager
 
@@ -62,7 +61,7 @@ def initialize_en_writer():
     # Initialize smart database (SQLite locally, Supabase if configured)
     db = SmartNotebookerDB()
     auth = AuthManager(db)
-    en_writer = OpenRouterENWriter(str(base_dir))
+    en_writer = ENWriter(str(base_dir))
 
 def require_auth(f):
     """Decorator to require authentication"""
@@ -598,188 +597,7 @@ def switch_model():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/api/chat', methods=['POST'])
-def chat_with_ai():
-    """Chat with AI assistant for project-specific help"""
-    if not en_writer:
-        initialize_en_writer()
-    
-    try:
-        data = request.get_json()
-        message = data.get('message', '').strip()
-        project_id = data.get('project_id')
-        
-        if not message:
-            return jsonify({'status': 'error', 'message': 'Message is required'})
-        
-        # Get current user ID from session (allow unauthenticated for now)
-        user_id = session.get('user_id', 1)  # Default to user 1 for testing
-        
-        # Get project data for context
-        project_context = ""
-        project_sections = []
-        
-        if project_id:
-            project = db.get_project_by_id(project_id) if hasattr(db, 'get_project_by_id') else None
-            if project:
-                project_context = f"Project: {project.get('name', 'Unknown')} - {project.get('description', 'No description')}"
-                project_sections = db.get_project_en_files(project_id) if hasattr(db, 'get_project_en_files') else []
-        
-        # Get user's EN files for context
-        user_en_files = db.get_en_files(user_id) if db else []
-        
-        # Build context for the AI
-        context_info = f"""
-Project Context: {project_context}
-
-Current Project Sections ({len(project_sections)} total):
-"""
-        for section in project_sections[:10]:  # Limit to first 10 sections
-            context_info += f"- {section.get('filename', 'Unknown')}: {section.get('title', 'No title')}\n"
-        
-        if len(project_sections) > 10:
-            context_info += f"... and {len(project_sections) - 10} more sections\n"
-        
-        context_info += f"""
-User's Total EN Files: {len(user_en_files)}
-
-User Message: {message}
-"""
-        
-        # Create a conversational prompt
-        prompt = f"""You are an AI assistant helping with VEX engineering notebooks. Be concise and use proper formatting.
-
-{context_info}
-
-User asked: "{message}"
-
-**Instructions:**
-- Keep responses short and to the point
-- Use proper markdown formatting (no asterisks for bullets)
-- Use numbered lists and bullet points correctly
-- Ask 2-3 quick questions max
-- When user says "create sections" or "create them", immediately offer to create sections
-- Be friendly but brief
-
-**For VEX projects, ask:**
-1. What VEX game/challenge?
-2. Main goals?
-3. Timeline?
-
-**Standard sections:**
-- Project overview & goals
-- Design process & brainstorming
-- Technical specifications
-- CAD models & drawings
-- Programming & code
-- Testing & iterations
-- Competition results
-- Future improvements
-
-**Formatting rules:**
-- Use numbered lists (1. 2. 3.) for questions
-- Use bullet points (-) for lists
-- NO asterisks (*) for formatting
-- Keep it conversational but concise
-
-**Important:** If user says "create sections", "create them", or "make sections", respond with "I'll create the standard VEX engineering notebook sections for you now!" and list the sections."""
-
-        # Generate AI response using OpenRouter
-        ai_response = en_writer.openrouter.generate_text(prompt, max_tokens=150)
-        
-        # Log the interaction
-        if db:
-            db.log_llm_interaction(
-                user_id=user_id,
-                model_name=en_writer.openrouter.get_current_model(),
-                prompt=prompt,
-                response=ai_response,
-                tokens_used=len(prompt.split()) + len(ai_response.split()),
-                cost=0.0
-            )
-        
-        return jsonify({
-            'status': 'success',
-            'response': ai_response,
-            'project_sections_count': len(project_sections),
-            'total_en_files': len(user_en_files)
-        })
-        
-    except Exception as e:
-        logger.error(f"Chat error: {e}")
-        return jsonify({'status': 'error', 'message': str(e)})
-
-@app.route('/api/create_sections', methods=['POST'])
-def create_sections():
-    """Create multiple sections for a project based on planning"""
-    if not en_writer:
-        initialize_en_writer()
-    
-    try:
-        data = request.get_json()
-        project_id = data.get('project_id')
-        sections = data.get('sections', [])
-        
-        if not project_id or not sections:
-            return jsonify({'status': 'error', 'message': 'Project ID and sections list are required'})
-        
-        # Get current user ID from session
-        user_id = session.get('user_id', 1)  # Default to user 1 for testing
-        
-        created_sections = []
-        
-        for section in sections:
-            section_name = section.get('name', '')
-            section_description = section.get('description', '')
-            
-            if section_name:
-                # Create the section content using AI
-                content_prompt = f"""Create a comprehensive VEX engineering notebook section titled "{section_name}".
-
-Description: {section_description}
-
-Please create a well-structured section with:
-- Clear overview and objectives
-- Technical details and specifications
-- Implementation approach
-- Testing procedures
-- Results and analysis
-- Future improvements
-- Placeholders for images [image N]
-- Appropriate tags and comments
-
-Format as markdown with proper headings and structure. Make it specific to VEX robotics engineering."""
-
-                section_content = en_writer.openrouter.generate_text(content_prompt, max_tokens=800)
-                
-                # Add metadata
-                enhanced_content = f"{section_content}\n\n[TAG: vex, robotics, engineering, {section_name.lower().replace(' ', '-')}]\n[COMMENT: Generated section for VEX project planning]"
-                
-                # Create the EN file in database
-                file_id = db.create_en_file(
-                    user_id=user_id,
-                    filename=f"{section_name.lower().replace(' ', '_')}.txt",
-                    title=section_name,
-                    content=enhanced_content,
-                    tags=["vex", "robotics", "engineering"],
-                    project_id=project_id
-                )
-                
-                created_sections.append({
-                    'id': file_id,
-                    'name': section_name,
-                    'filename': f"{section_name.lower().replace(' ', '_')}.txt"
-                })
-        
-        return jsonify({
-            'status': 'success',
-            'created_sections': created_sections,
-            'count': len(created_sections)
-        })
-        
-    except Exception as e:
-        logger.error(f"Create sections error: {e}")
-        return jsonify({'status': 'error', 'message': str(e)})
+# AI chat endpoints removed - functionality moved to n8n workflows
 
 if __name__ == '__main__':
     # Create necessary directories

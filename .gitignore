@@ -50,3 +50,10 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+
+# n8n specific
+.n8n/
+n8n_data/
+*.n8n
+workflows/
+credentials/

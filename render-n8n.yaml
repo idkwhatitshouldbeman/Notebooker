@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: n8n-workflow-automation
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: n8n start
+    envVars:
+      - key: N8N_HOST
+        value: 0.0.0.0
+      - key: N8N_PORT
+        value: 5678
+      - key: N8N_PROTOCOL
+        value: https
+      - key: WEBHOOK_URL
+        value: https://n8n-workflow-automation.onrender.com
+      - key: GENERIC_TIMEZONE
+        value: America/Los_Angeles
+      - key: DB_TYPE
+        value: postgresdb
+      - key: DB_POSTGRESDB_HOST
+        fromDatabase:
+          name: n8n-database
+          property: host
+      - key: DB_POSTGRESDB_PORT
+        fromDatabase:
+          name: n8n-database
+          property: port
+      - key: DB_POSTGRESDB_DATABASE
+        fromDatabase:
+          name: n8n-database
+          property: database
+      - key: DB_POSTGRESDB_USER
+        fromDatabase:
+          name: n8n-database
+          property: user
+      - key: DB_POSTGRESDB_PASSWORD
+        fromDatabase:
+          name: n8n-database
+          property: password
+      - key: N8N_ENCRYPTION_KEY
+        generateValue: true
+      - key: N8N_USER_MANAGEMENT_DISABLED
+        value: false
+      - key: N8N_BASIC_AUTH_ACTIVE
+        value: true
+      - key: N8N_BASIC_AUTH_USER
+        value: admin
+      - key: N8N_BASIC_AUTH_PASSWORD
+        generateValue: true
+
+databases:
+  - name: n8n-database
+    databaseName: n8n_database_aumq
+    user: n8n_database_aumq_user
+    plan: free
