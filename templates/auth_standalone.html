@@ -168,8 +168,8 @@
                             <!-- Sign In Form -->
                             <form id="loginForm">
                                 <div class="mb-3">
-                                    <label for="loginEmail" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="loginEmail" placeholder="Enter your email" required>
+                                    <label for="loginUsername" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="loginUsername" placeholder="Enter your username" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="loginPassword" class="form-label">Password</label>
@@ -195,8 +195,9 @@
                                     <input type="text" class="form-control" id="registerName" placeholder="Enter your full name" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="registerEmail" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="registerEmail" placeholder="Enter your email" required>
+                                    <label for="registerEmail" class="form-label">Gmail Address</label>
+                                    <input type="email" class="form-control" id="registerEmail" placeholder="Enter your Gmail address" required>
+                                    <div class="form-text text-muted">Only Gmail addresses are accepted</div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="registerPassword" class="form-label">Password</label>
@@ -240,7 +241,7 @@
         const registerForm = document.getElementById('registerForm');
         const toggleButton = document.getElementById('toggleForms');
         const toggleText = document.getElementById('toggleText');
-        const alertContainer = document.getElementById('alertContainer');
+        const alertContainer = document.getElementById('alert-container');
 
         let isLoginMode = true;
 
@@ -281,7 +282,7 @@
             e.preventDefault();
             clearAlerts();
 
-            const email = document.getElementById('loginEmail').value;
+            const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
 
             try {
@@ -290,7 +291,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ username, password })
                 });
 
                 const data = await response.json();
@@ -319,6 +320,12 @@
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
 
+            // Validate Gmail address
+            if (!email.endsWith('@gmail.com')) {
+                showAlert('Please use a Gmail address (ending with @gmail.com)', 'danger');
+                return;
+            }
+
             if (password !== confirmPassword) {
                 showAlert('Passwords do not match.', 'danger');
                 return;
@@ -343,8 +350,8 @@
                     registerForm.style.display = 'none';
                     toggleText.textContent = "Don't have an account? Sign up";
                     
-                    // Pre-fill email
-                    document.getElementById('loginEmail').value = email;
+                    // Pre-fill username (use email as username)
+                    document.getElementById('loginUsername').value = email;
                 } else {
                     showAlert(data.error || 'Registration failed. Please try again.', 'danger');
                 }

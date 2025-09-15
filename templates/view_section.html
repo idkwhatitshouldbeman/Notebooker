@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section_name.replace('_', ' ').title() }} - Notebooker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-white">
+                    <i class="fas fa-file-alt me-2"></i>{{ section_name.replace('_', ' ').title() }}
+                </h1>
+                <div>
+                    <a href="{{ url_for('rewrite', section_name=section_name) }}" class="btn btn-warning">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                    <a href="{{ url_for('rewrite', section_name=section_name) }}" class="btn btn-primary">
+                        <i class="fas fa-magic me-2"></i>Improve
+                    </a>
+                    <a href="{{ url_for('sections') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-file-text me-2"></i>Section Content
+                        </h5>
+                        <div>
+                            <span class="badge bg-{{ 'success' if section.status == 'completed' else 'warning' }}">
+                                {{ section.status.title() }}
+                            </span>
+                            {% if section.section_type %}
+                            <span class="badge bg-info ms-2">
+                                {{ section.section_type.title() }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="section-content">
+                        {% if section_content %}
+                            {{ section_content | safe }}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No content yet</h5>
+                                <p class="text-muted">This section doesn't have any content yet.</p>
+                                <a href="{{ url_for('rewrite', section_name=section_name) }}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Add Content
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Section Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Title:</dt>
+                        <dd class="col-sm-8">{{ section_name.replace('_', ' ').title() }}</dd>
+                        
+                        <dt class="col-sm-4">Type:</dt>
+                        <dd class="col-sm-8">Engineering Notebook Section</dd>
+                        
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-warning">
+                                Draft
+                            </span>
+                        </dd>
+                        
+                        <dt class="col-sm-4">Created:</dt>
+                        <dd class="col-sm-8">Unknown</dd>
+                        
+                        <dt class="col-sm-4">Modified:</dt>
+                        <dd class="col-sm-8">Never</dd>
+                    </dl>
+
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tools me-2"></i>Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('rewrite', section_name=section_name) }}" class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>Edit Section
+                        </a>
+                        <a href="{{ url_for('rewrite', section_name=section_name) }}" class="btn btn-primary">
+                            <i class="fas fa-magic me-2"></i>Improve Content
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

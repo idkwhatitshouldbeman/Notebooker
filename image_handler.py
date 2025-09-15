@@ -300,9 +300,8 @@ class ImageEnhancedENWriter:
     
     def __init__(self, base_dir: str, planning_file: str = "planning_sheet.json"):
         from en_writer import ENWriter
-        from llm_backend import EnhancedENWriter
         
-        self.en_writer = EnhancedENWriter(base_dir, planning_file)
+        self.en_writer = ENWriter(base_dir, planning_file)
         self.image_handler = ImageHandler()
         self.caption_generator = ImageCaptionGenerator()
     

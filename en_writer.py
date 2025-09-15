@@ -11,6 +11,9 @@ from typing import Dict, List, Any, Optional, Tuple
 from pathlib import Path
 import logging
 
+# Import AI service client
+from ai_service_client import get_ai_client, get_task_manager, AgentConfig, TaskStatus
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -183,7 +186,77 @@ class ENWriter:
         return any(indicator in content.lower() for indicator in image_indicators)
     
     def generate_user_questions(self, gap_info: Dict[str, Any]) -> List[str]:
-        """Generate targeted questions for user based on gap analysis"""
+        """Generate targeted questions for user based on gap analysis using AI service"""
+        try:
+            # Create prompt context for AI service
+            prompt_context = f"""
+            As an engineering notebook assistant, analyze the following gap analysis and generate 3-5 targeted questions to help the user improve their documentation:
+            
+            Gap Analysis:
+            - Missing sections: {gap_info.get('missing_sections', [])}
+            - Incomplete sections: {gap_info.get('incomplete_sections', [])}
+            - Technical gaps: {gap_info.get('technical_gaps', [])}
+            - Unclear content: {gap_info.get('unclear_content', [])}
+            - Missing images: {gap_info.get('missing_images', [])}
+            
+            Generate specific, actionable questions that will help the user prioritize and improve their engineering documentation. Focus on robotics and engineering context.
+            """
+            
+            # Use AI service to generate questions
+            ai_client = get_ai_client()
+            task_manager = get_task_manager()
+            
+            agent_config = AgentConfig(
+                model="deepseek/deepseek-chat-v3.1:free",
+                temperature=0.7,
+                max_tokens=500
+            )
+            
+            task_id = task_manager.start_task(prompt_context, agent_config)
+            
+            # Poll for completion
+            response = ai_client.poll_task_completion(task_id, max_wait_time=60)
+            
+            if response.status == TaskStatus.COMPLETED.value and response.agent_reply:
+                # Parse AI response to extract questions
+                ai_questions = self._parse_ai_questions(response.agent_reply)
+                if ai_questions:
+                    return ai_questions
+            
+            # Fallback to template-based questions if AI fails
+            logger.warning(f"AI service failed for question generation, using fallback: {response.error}")
+            return self._generate_fallback_questions(gap_info)
+            
+        except Exception as e:
+            logger.error(f"Error generating questions with AI service: {e}")
+            return self._generate_fallback_questions(gap_info)
+    
+    def _parse_ai_questions(self, ai_response: str) -> List[str]:
+        """Parse AI response to extract individual questions"""
+        # Look for numbered questions or bullet points
+        questions = []
+        
+        # Try to find numbered questions (1., 2., etc.)
+        numbered_pattern = r'\d+\.\s*([^?\n]*\?)'
+        matches = re.findall(numbered_pattern, ai_response)
+        if matches:
+            questions.extend([match.strip() for match in matches])
+        
+        # Try to find bullet point questions (-, *, •)
+        bullet_pattern = r'[-*•]\s*([^?\n]*\?)'
+        matches = re.findall(bullet_pattern, ai_response)
+        if matches:
+            questions.extend([match.strip() for match in matches])
+        
+        # If no structured format found, split by sentences ending with ?
+        if not questions:
+            sentences = re.split(r'[.!?]+', ai_response)
+            questions = [s.strip() + '?' for s in sentences if s.strip() and '?' in s]
+        
+        return questions[:5]  # Limit to 5 questions
+    
+    def _generate_fallback_questions(self, gap_info: Dict[str, Any]) -> List[str]:
+        """Generate fallback questions using template-based approach"""
         questions = []
         
         # Questions for missing sections
@@ -209,52 +282,337 @@ class ENWriter:
         return questions
     
     def draft_new_entry(self, section_content: str, user_inputs: Dict[str, str]) -> str:
-        """Generate new draft entry based on section content and user inputs"""
-        # This would integrate with LLM backend
-        # For now, return a structured template
+        """Generate new draft entry using AI service"""
+        try:
+            # Create prompt context for AI service
+            title = user_inputs.get('title', 'Section Title')
+            overview = user_inputs.get('overview', '')
+            technical_details = user_inputs.get('technical_details', '')
+            implementation = user_inputs.get('implementation', '')
+            testing = user_inputs.get('testing', '')
+            results = user_inputs.get('results', '')
+            improvements = user_inputs.get('improvements', '')
+            tags = user_inputs.get('tags', 'robotics, engineering')
+            comment = user_inputs.get('comment', '')
+            
+            prompt_context = f"""
+            As an engineering notebook assistant, create a comprehensive draft entry for a robotics engineering section with the following details:
+            
+            Title: {title}
+            Overview: {overview}
+            Technical Details: {technical_details}
+            Implementation: {implementation}
+            Testing: {testing}
+            Results: {results}
+            Improvements: {improvements}
+            Tags: {tags}
+            Comment: {comment}
+            
+            Create a well-structured engineering notebook entry with:
+            1. Clear heading hierarchy
+            2. Technical rigor appropriate for robotics
+            3. Professional engineering documentation style
+            4. Placeholder references for images [image N]
+            5. Proper sections: Overview, Technical Details, Implementation, Testing, Results, Future Improvements
+            
+            Focus on clarity, technical accuracy, and professional engineering standards.
+            """
+            
+            # Use AI service to generate draft
+            ai_client = get_ai_client()
+            task_manager = get_task_manager()
+            
+            agent_config = AgentConfig(
+                model="deepseek/deepseek-chat-v3.1:free",
+                temperature=0.7,
+                max_tokens=1500
+            )
+            
+            task_id = task_manager.start_task(prompt_context, agent_config)
+            
+            # Poll for completion
+            response = ai_client.poll_task_completion(task_id, max_wait_time=120)
+            
+            if response.status == TaskStatus.COMPLETED.value and response.agent_reply:
+                # Clean up and format the AI response
+                draft_content = self._format_ai_draft(response.agent_reply, user_inputs)
+                return draft_content
+            
+            # Fallback to template-based generation if AI fails
+            logger.warning(f"AI service failed for draft generation, using fallback: {response.error}")
+            return self._generate_fallback_draft(user_inputs)
+            
+        except Exception as e:
+            logger.error(f"Error generating draft with AI service: {e}")
+            return self._generate_fallback_draft(user_inputs)
+    
+    def _format_ai_draft(self, ai_response: str, user_inputs: Dict[str, str]) -> str:
+        """Format AI response into proper draft structure"""
+        # Ensure proper heading structure
+        if not ai_response.startswith('#'):
+            title = user_inputs.get('title', 'Section Title')
+            ai_response = f"# {title}\n\n{ai_response}"
         
-        template = f"""
-# {user_inputs.get('title', 'Section Title')}
+        # Add image placeholders if not present
+        if '[image' not in ai_response:
+            ai_response += "\n\n[image 1] - System architecture diagram\n[image 2] - Implementation flowchart"
+        
+        # Add tags and comment if not present
+        tags = user_inputs.get('tags', 'robotics, engineering')
+        comment = user_inputs.get('comment', 'Generated using AI assistance')
+        
+        if '[TAG:' not in ai_response:
+            ai_response += f"\n\n[TAG: {tags}]"
+        if '[COMMENT:' not in ai_response:
+            ai_response += f"\n[COMMENT: {comment}]"
+        
+        return ai_response.strip()
+    
+    def _generate_fallback_draft(self, user_inputs: Dict[str, str]) -> str:
+        """Generate fallback draft using template-based approach"""
+        title = user_inputs.get('title', 'Section Title')
+        overview = user_inputs.get('overview', '')
+        technical_details = user_inputs.get('technical_details', '')
+        implementation = user_inputs.get('implementation', '')
+        testing = user_inputs.get('testing', '')
+        results = user_inputs.get('results', '')
+        improvements = user_inputs.get('improvements', '')
+        tags = user_inputs.get('tags', 'robotics, engineering')
+        comment = user_inputs.get('comment', '')
+        
+        # Generate contextual content based on section type
+        section_type = self._detect_section_type(title, overview)
+        contextual_content = self._generate_contextual_content(section_type, user_inputs)
+        
+        template = f"""# {title}
 
 ## Overview
-{user_inputs.get('overview', 'Provide overview of this section')}
+{overview or contextual_content.get('overview', 'This section provides a comprehensive overview of the {title.lower()} component.')}
 
 ## Technical Details
-{user_inputs.get('technical_details', 'Add technical specifications and implementation details')}
+{technical_details or contextual_content.get('technical_details', 'Technical specifications and implementation details will be documented here.')}
 
 ## Implementation
-{user_inputs.get('implementation', 'Describe implementation approach')}
+{implementation or contextual_content.get('implementation', 'Implementation approach and methodology will be described in this section.')}
 
 ## Testing
-{user_inputs.get('testing', 'Describe testing procedures and results')}
+{testing or contextual_content.get('testing', 'Testing procedures, test cases, and validation results will be documented here.')}
 
 ## Results
-{user_inputs.get('results', 'Present results and analysis')}
+{results or contextual_content.get('results', 'Results, analysis, and performance metrics will be presented in this section.')}
 
 ## Future Improvements
-{user_inputs.get('improvements', 'Suggest future improvements')}
+{improvements or contextual_content.get('improvements', 'Future enhancements and optimization opportunities will be outlined here.')}
 
-[image 1] - {user_inputs.get('image1_caption', 'Add image caption')}
-[image 2] - {user_inputs.get('image2_caption', 'Add image caption')}
+[image 1] - {user_inputs.get('image1_caption', 'System architecture diagram')}
+[image 2] - {user_inputs.get('image2_caption', 'Implementation flowchart')}
 
-[TAG: {user_inputs.get('tags', 'robotics, engineering')}]
-[COMMENT: {user_inputs.get('comment', 'Add any additional notes')}]
+[TAG: {tags}]
+[COMMENT: {comment or 'Generated using template-based AI assistance. Enhanced content available when AI service is deployed.'}]
 """
         return template.strip()
     
-    def rewrite_entry(self, entry_text: str) -> str:
-        """Rewrite existing entry for clarity and technical rigor"""
-        # This would integrate with LLM backend for content improvement
-        # For now, return the original text with some basic improvements
+    def _detect_section_type(self, title: str, overview: str) -> str:
+        """Detect the type of engineering section based on title and overview"""
+        title_lower = title.lower()
+        overview_lower = overview.lower()
         
-        # Basic text improvements
+        if any(word in title_lower for word in ['hardware', 'sensor', 'actuator', 'motor', 'circuit']):
+            return 'hardware'
+        elif any(word in title_lower for word in ['software', 'code', 'algorithm', 'program']):
+            return 'software'
+        elif any(word in title_lower for word in ['control', 'pid', 'feedback', 'loop']):
+            return 'control'
+        elif any(word in title_lower for word in ['test', 'validation', 'verification']):
+            return 'testing'
+        elif any(word in title_lower for word in ['result', 'analysis', 'performance']):
+            return 'analysis'
+        else:
+            return 'general'
+    
+    def _generate_contextual_content(self, section_type: str, user_inputs: Dict[str, str]) -> Dict[str, str]:
+        """Generate contextual content based on section type"""
+        content_templates = {
+            'hardware': {
+                'overview': 'This section documents the hardware components, specifications, and physical implementation of the system.',
+                'technical_details': 'Hardware specifications, component selection criteria, and technical requirements will be detailed here.',
+                'implementation': 'Physical assembly, wiring diagrams, and hardware integration procedures will be documented.',
+                'testing': 'Hardware testing procedures, component validation, and performance verification will be outlined.',
+                'results': 'Hardware performance metrics, test results, and component reliability data will be presented.',
+                'improvements': 'Hardware optimization opportunities, component upgrades, and design improvements will be suggested.'
+            },
+            'software': {
+                'overview': 'This section covers the software architecture, algorithms, and code implementation.',
+                'technical_details': 'Software architecture, design patterns, and technical specifications will be documented.',
+                'implementation': 'Code structure, algorithms, and implementation details will be described.',
+                'testing': 'Software testing procedures, unit tests, and integration testing will be outlined.',
+                'results': 'Software performance metrics, execution times, and functionality validation will be presented.',
+                'improvements': 'Code optimization, algorithm improvements, and software enhancements will be suggested.'
+            },
+            'control': {
+                'overview': 'This section documents the control system design, algorithms, and implementation.',
+                'technical_details': 'Control theory, mathematical models, and system dynamics will be detailed.',
+                'implementation': 'Control algorithm implementation, tuning procedures, and system integration will be described.',
+                'testing': 'Control system testing, stability analysis, and performance validation will be outlined.',
+                'results': 'Control performance metrics, response characteristics, and system behavior will be presented.',
+                'improvements': 'Control algorithm optimization, parameter tuning, and system enhancements will be suggested.'
+            },
+            'testing': {
+                'overview': 'This section outlines the testing methodology, procedures, and validation approach.',
+                'technical_details': 'Test specifications, requirements, and acceptance criteria will be documented.',
+                'implementation': 'Test setup, procedures, and execution methodology will be described.',
+                'testing': 'Test execution, data collection, and validation procedures will be detailed.',
+                'results': 'Test results, analysis, and validation outcomes will be presented.',
+                'improvements': 'Testing methodology improvements, additional test cases, and validation enhancements will be suggested.'
+            },
+            'analysis': {
+                'overview': 'This section presents the analysis of results, performance evaluation, and system assessment.',
+                'technical_details': 'Analysis methodology, metrics, and evaluation criteria will be documented.',
+                'implementation': 'Data analysis procedures, tools, and techniques will be described.',
+                'testing': 'Validation of analysis results and verification procedures will be outlined.',
+                'results': 'Analysis results, findings, and conclusions will be presented.',
+                'improvements': 'Analysis methodology improvements, additional metrics, and enhanced evaluation techniques will be suggested.'
+            },
+            'general': {
+                'overview': 'This section provides a comprehensive overview of the topic and its relevance to the project.',
+                'technical_details': 'Technical specifications, requirements, and implementation details will be documented.',
+                'implementation': 'Implementation approach, methodology, and procedures will be described.',
+                'testing': 'Testing procedures, validation methods, and verification approaches will be outlined.',
+                'results': 'Results, findings, and analysis will be presented.',
+                'improvements': 'Future improvements, optimizations, and enhancements will be suggested.'
+            }
+        }
+        
+        return content_templates.get(section_type, content_templates['general'])
+    
+    def rewrite_entry(self, entry_text: str) -> str:
+        """Rewrite existing entry for clarity and technical rigor using AI service"""
+        try:
+            # Create prompt context for AI service
+            prompt_context = f"""
+            As an engineering notebook assistant, rewrite the following engineering documentation to improve clarity, technical rigor, and professional presentation:
+            
+            Original Text:
+            {entry_text}
+            
+            Please rewrite this content to:
+            1. Improve clarity and readability
+            2. Enhance technical rigor and precision
+            3. Ensure proper engineering documentation standards
+            4. Maintain all technical information while improving presentation
+            5. Fix any formatting issues
+            6. Add appropriate technical terminology
+            7. Ensure proper heading hierarchy and structure
+            
+            Focus on making this a professional, clear, and technically accurate engineering document suitable for robotics projects.
+            """
+            
+            # Use AI service to rewrite content
+            ai_client = get_ai_client()
+            task_manager = get_task_manager()
+            
+            agent_config = AgentConfig(
+                model="deepseek/deepseek-chat-v3.1:free",
+                temperature=0.5,  # Lower temperature for more consistent rewriting
+                max_tokens=2000
+            )
+            
+            task_id = task_manager.start_task(prompt_context, agent_config)
+            
+            # Poll for completion
+            response = ai_client.poll_task_completion(task_id, max_wait_time=120)
+            
+            if response.status == TaskStatus.COMPLETED.value and response.agent_reply:
+                # Clean up and format the AI response
+                rewritten_content = self._format_ai_rewrite(response.agent_reply, entry_text)
+                return rewritten_content
+            
+            # Fallback to template-based rewriting if AI fails
+            logger.warning(f"AI service failed for rewrite, using fallback: {response.error}")
+            return self._generate_fallback_rewrite(entry_text)
+            
+        except Exception as e:
+            logger.error(f"Error rewriting with AI service: {e}")
+            return self._generate_fallback_rewrite(entry_text)
+    
+    def _format_ai_rewrite(self, ai_response: str, original_text: str) -> str:
+        """Format AI rewrite response"""
+        # Ensure the response maintains the original structure
+        if not ai_response.strip():
+            return original_text
+        
+        # Clean up any extra formatting
+        rewritten = ai_response.strip()
+        
+        # Ensure proper line breaks
+        rewritten = re.sub(r'\n\s*\n\s*\n', '\n\n', rewritten)
+        
+        return rewritten
+    
+    def _generate_fallback_rewrite(self, entry_text: str) -> str:
+        """Generate fallback rewrite using template-based approach"""
         improved_text = entry_text
         
         # Fix common formatting issues
         improved_text = re.sub(r'\n\s*\n\s*\n', '\n\n', improved_text)  # Remove excessive line breaks
         improved_text = re.sub(r'([.!?])\s*([A-Z])', r'\1\n\n\2', improved_text)  # Add paragraph breaks
         
+        # Enhance technical content
+        improved_text = self._enhance_technical_content(improved_text)
+        
+        # Improve structure and clarity
+        improved_text = self._improve_structure(improved_text)
+        
+        # Add technical rigor
+        improved_text = self._add_technical_rigor(improved_text)
+        
         return improved_text
+    
+    def _enhance_technical_content(self, text: str) -> str:
+        """Enhance technical content with better descriptions"""
+        enhancements = {
+            r'\bTODO\b': '**TODO:**',
+            r'\bFIXME\b': '**FIXME:**',
+            r'\bTBD\b': '**To Be Determined:**',
+            r'\bXXX\b': '**Note:**',
+            r'\b\.\.\.\b': '**[Additional details to be added]**',
+            r'\b(?:implement|implementation)\b': '**Implementation:**',
+            r'\b(?:test|testing)\b': '**Testing:**',
+            r'\b(?:result|results)\b': '**Results:**',
+            r'\b(?:improve|improvement)\b': '**Improvements:**'
+        }
+        
+        for pattern, replacement in enhancements.items():
+            text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        
+        return text
+    
+    def _improve_structure(self, text: str) -> str:
+        """Improve the structure and organization of the text"""
+        # Ensure proper heading hierarchy
+        if not text.startswith('#'):
+            first_line = text.split('\n')[0]
+            text = f"# {first_line}\n\n{text}"
+        
+        # Add missing sections if they don't exist
+        sections = ['Overview', 'Technical Details', 'Implementation', 'Testing', 'Results', 'Improvements']
+        for section in sections:
+            if f"## {section}" not in text and f"# {section}" not in text:
+                text += f"\n\n## {section}\n[Content to be added]"
+        
+        return text
+    
+    def _add_technical_rigor(self, text: str) -> str:
+        """Add technical rigor and engineering standards"""
+        # Add technical comment if content seems incomplete
+        if len(text.strip()) < 200:
+            text += "\\n\\n**[Technical Note:]** This section requires additional technical details, specifications, and implementation information to meet engineering documentation standards."
+        
+        # Add improvement suggestions
+        if 'improvement' not in text.lower() and 'future' not in text.lower():
+            text += "\\n\\n## Future Improvements\\n[Future enhancements and optimizations to be documented]"
+        
+        return text
     
     def save_en_files(self, updated_sections: Dict[str, str]) -> None:
         """Save updated EN files to disk"""

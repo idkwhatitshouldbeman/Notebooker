@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Section - Notebooker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-white">
+                    <i class="fas fa-plus me-2"></i>Create New Section
+                </h1>
+                <div>
+                    <a href="{{ url_for('sections') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Sections
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>Section Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('draft') }}">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Section Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="project_id" class="form-label">Project</label>
+                            <select class="form-select" id="project_id" name="project_id">
+                                <option value="">Select a project (optional)</option>
+                                <!-- Add project options here -->
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="section_type" class="form-label">Section Type</label>
+                            <select class="form-select" id="section_type" name="section_type">
+                                <option value="overview">Project Overview</option>
+                                <option value="design">Design Process</option>
+                                <option value="technical">Technical Specifications</option>
+                                <option value="cad">CAD Models & Drawings</option>
+                                <option value="programming">Programming & Code</option>
+                                <option value="testing">Testing & Iterations</option>
+                                <option value="results">Competition Results</option>
+                                <option value="improvements">Future Improvements</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Initial Content</label>
+                            <textarea class="form-control" id="content" name="content" rows="10" 
+                                placeholder="Start writing your section content here..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tags" class="form-label">Tags (comma-separated)</label>
+                            <input type="text" class="form-control" id="tags" name="tags" 
+                                placeholder="e.g., robotics, VEX, design, testing">
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Create Section
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Tips
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary">Section Types:</h6>
+                    <ul class="list-unstyled small">
+                        <li><strong>Project Overview:</strong> Goals, timeline, team</li>
+                        <li><strong>Design Process:</strong> Brainstorming, iterations</li>
+                        <li><strong>Technical Specs:</strong> Requirements, constraints</li>
+                        <li><strong>CAD Models:</strong> 3D designs, drawings</li>
+                        <li><strong>Programming:</strong> Code, algorithms</li>
+                        <li><strong>Testing:</strong> Experiments, results</li>
+                        <li><strong>Results:</strong> Competition outcomes</li>
+                        <li><strong>Improvements:</strong> Future enhancements</li>
+                    </ul>
+                    
+                    <hr>
+                    
+                    <h6 class="text-success">Best Practices:</h6>
+                    <ul class="list-unstyled small">
+                        <li>• Be specific and detailed</li>
+                        <li>• Include images and diagrams</li>
+                        <li>• Document decisions and reasoning</li>
+                        <li>• Use clear, technical language</li>
+                        <li>• Include measurements and data</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

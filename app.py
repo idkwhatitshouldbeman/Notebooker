@@ -2,7 +2,7 @@
 Flask Web Interface for Agentic Engineering Notebook Writer
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, make_response
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, make_response, send_file
 import os
 import json
 from datetime import datetime
@@ -12,6 +12,7 @@ import logging
 from en_writer import ENWriter
 from database_manager import SmartNotebookerDB
 from auth import AuthManager
+from ai_service_client import initialize_ai_service, get_ai_client, get_task_manager
 
 # Import livereload for development
 try:
@@ -62,6 +63,11 @@ def initialize_en_writer():
     db = SmartNotebookerDB()
     auth = AuthManager(db)
     en_writer = ENWriter(str(base_dir))
+    
+    # Initialize AI service
+    ai_service_url = os.environ.get('AI_SERVICE_URL', 'https://n8n-workflow-automation.onrender.com')
+    ai_api_key = os.environ.get('AI_API_KEY')
+    initialize_ai_service(ai_service_url, ai_api_key)
 
 def require_auth(f):
     """Decorator to require authentication"""
@@ -77,6 +83,7 @@ def auth_page():
     """Authentication page"""
     return render_template('auth_standalone.html')
 
+
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     """Register a new user"""
@@ -85,12 +92,19 @@ def register():
     
     try:
         data = request.get_json()
-        username = data.get('username')
+        name = data.get('name')
         email = data.get('email')
         password = data.get('password')
         
-        if not username or not password:
-            return jsonify({'success': False, 'error': 'Username and password are required'})
+        if not name or not email or not password:
+            return jsonify({'success': False, 'error': 'Name, email, and password are required'})
+        
+        # Validate Gmail address
+        if not email.endswith('@gmail.com'):
+            return jsonify({'success': False, 'error': 'Only Gmail addresses are accepted'})
+        
+        # Use email as username
+        username = email
         
         result = auth.create_user(username, email, password)
         
@@ -205,7 +219,7 @@ def dashboard():
     # Get user's projects from database
     projects = db.get_user_projects(user_id) if db else []
     
-    status = en_writer.en_writer.get_status_summary()
+    status = en_writer.get_status_summary()
     return render_template('dashboard.html', status=status, projects=projects)
 
 @app.route('/sections')
@@ -214,7 +228,7 @@ def sections():
     if not en_writer:
         initialize_en_writer()
     
-    sections = en_writer.en_writer.sections
+    sections = en_writer.sections
     return render_template('sections.html', sections=sections)
 
 @app.route('/analyze')
@@ -223,16 +237,20 @@ def analyze():
     if not en_writer:
         initialize_en_writer()
     
-    # Load sections if not already loaded
-    if not en_writer.en_writer.sections:
-        en_writer.en_writer.load_en_sections("en_files")
-    
-    gap_analysis = en_writer.en_writer.analyze_sections_for_gaps(en_writer.en_writer.sections)
-    questions = en_writer.generate_contextual_questions(gap_analysis)
-    
-    return render_template('analyze.html', 
-                         gap_analysis=gap_analysis, 
-                         questions=questions)
+    try:
+        # Load sections if not already loaded
+        if not en_writer.sections:
+            en_writer.load_en_sections("en_files")
+        
+        gap_analysis = en_writer.analyze_sections_for_gaps(en_writer.sections)
+        questions = en_writer.generate_user_questions(gap_analysis)
+        
+        return render_template('analyze.html', 
+                             gap_analysis=gap_analysis, 
+                             questions=questions)
+    except Exception as e:
+        logger.error(f"Error in analyze route: {e}")
+        return f"Error: {str(e)}", 500
 
 @app.route('/draft', methods=['GET', 'POST'])
 def draft():
@@ -255,14 +273,14 @@ def draft():
         }
         
         # Generate draft using LLM
-        draft_content = en_writer.draft_new_entry_with_llm(section_name, user_inputs)
+        draft_content = en_writer.draft_new_entry(section_name, user_inputs)
         
         # Save the draft
-        en_writer.en_writer.sections[section_name] = draft_content
-        en_writer.en_writer.save_en_files({section_name: draft_content})
+        en_writer.sections[section_name] = draft_content
+        en_writer.save_en_files({section_name: draft_content})
         
         # Log activity
-        en_writer.en_writer.log_agent_activity(
+        en_writer.log_agent_activity(
             "activity_log.json",
             {
                 'action': 'draft_created',
@@ -282,23 +300,23 @@ def rewrite(section_name):
     if not en_writer:
         initialize_en_writer()
     
-    if section_name not in en_writer.en_writer.sections:
+    if section_name not in en_writer.sections:
         flash(f'Section {section_name} not found', 'error')
         return redirect(url_for('sections'))
     
     if request.method == 'POST':
         improvement_focus = request.form.get('improvement_focus', 'clarity and technical rigor')
-        original_content = en_writer.en_writer.sections[section_name]
+        original_content = en_writer.sections[section_name]
         
         # Rewrite using LLM
-        improved_content = en_writer.rewrite_entry_with_llm(original_content, improvement_focus)
+        improved_content = en_writer.rewrite_entry(original_content)
         
         # Save the improved version
-        en_writer.en_writer.sections[section_name] = improved_content
-        en_writer.en_writer.save_en_files({section_name: improved_content})
+        en_writer.sections[section_name] = improved_content
+        en_writer.save_en_files({section_name: improved_content})
         
         # Log activity
-        en_writer.en_writer.log_agent_activity(
+        en_writer.log_agent_activity(
             "activity_log.json",
             {
                 'action': 'section_rewritten',
@@ -310,7 +328,7 @@ def rewrite(section_name):
         flash(f'Section {section_name} has been improved', 'success')
         return redirect(url_for('sections'))
     
-    section_content = en_writer.en_writer.sections[section_name]
+    section_content = en_writer.sections[section_name]
     return render_template('rewrite.html', 
                          section_name=section_name, 
                          section_content=section_content)
@@ -321,11 +339,11 @@ def view_section(section_name):
     if not en_writer:
         initialize_en_writer()
     
-    if section_name not in en_writer.en_writer.sections:
+    if section_name not in en_writer.sections:
         flash(f'Section {section_name} not found', 'error')
         return redirect(url_for('sections'))
     
-    section_content = en_writer.en_writer.sections[section_name]
+    section_content = en_writer.sections[section_name]
     return render_template('view_section.html', 
                          section_name=section_name, 
                          section_content=section_content)
@@ -336,8 +354,12 @@ def planning():
     if not en_writer:
         initialize_en_writer()
     
-    planning_data = en_writer.en_writer.planning_data
-    return render_template('planning.html', planning_data=planning_data)
+    try:
+        planning_data = en_writer.planning_data
+        return render_template('planning.html', planning_data=planning_data)
+    except Exception as e:
+        logger.error(f"Error in planning route: {e}")
+        return f"Error: {str(e)}", 500
 
 @app.route('/api/update_planning', methods=['POST'])
 def update_planning():
@@ -347,7 +369,7 @@ def update_planning():
     
     try:
         updates = request.get_json()
-        en_writer.en_writer.update_planning_sheet(updates)
+        en_writer.update_planning_sheet(updates)
         return jsonify({'status': 'success'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
@@ -361,14 +383,54 @@ def analyze_content():
     try:
         data = request.get_json()
         content = data.get('content', '')
-        analysis = en_writer.analyze_content_with_llm(content)
+        # Simple content analysis - could be enhanced with actual LLM
+        analysis = {
+            'status': 'success',
+            'analysis': f'Content length: {len(content)} characters. This is a basic analysis.',
+            'suggestions': ['Add more technical details', 'Include diagrams', 'Provide examples']
+        }
         return jsonify(analysis)
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/api/projects', methods=['POST'])
+@app.route('/create_project', methods=['GET', 'POST'])
 def create_project():
-    """Create a new project"""
+    """Create project page and handle form submission"""
+    if request.method == 'GET':
+        # Show create project form
+        return render_template('create_project.html')
+    
+    elif request.method == 'POST':
+        # Handle form submission
+        try:
+            name = request.form.get('name', '').strip()
+            description = request.form.get('description', '').strip()
+            
+            if not name:
+                flash('Project name is required', 'error')
+                return render_template('create_project.html')
+            
+            user_id = session.get('user_id')
+            if not user_id:
+                flash('Please log in to create a project', 'error')
+                return redirect(url_for('auth_page'))
+            
+            project_id = db.create_project(user_id, name, description)
+            if project_id:
+                flash(f'Project "{name}" created successfully!', 'success')
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Failed to create project', 'error')
+                return render_template('create_project.html')
+        
+        except Exception as e:
+            logger.error(f"Error creating project: {e}")
+            flash(f'Error creating project: {str(e)}', 'error')
+            return render_template('create_project.html')
+
+@app.route('/api/projects', methods=['POST'])
+def create_project_api():
+    """Create a new project via API"""
     try:
         data = request.get_json()
         name = data.get('name', '').strip()
@@ -431,6 +493,11 @@ def delete_project(project_id):
 
 @app.route('/backup')
 def backup():
+    """Backup page"""
+    return render_template('backup.html')
+
+@app.route('/backup/create', methods=['POST'])
+def create_backup():
     """Create backup of current state"""
     if not en_writer:
         initialize_en_writer()
@@ -443,9 +510,9 @@ def backup():
         backup_file = backup_dir / f"backup_{timestamp}.json"
         
         backup_data = {
-            'sections': en_writer.en_writer.sections,
-            'planning_data': en_writer.en_writer.planning_data,
-            'activity_log': en_writer.en_writer.activity_log,
+            'sections': en_writer.sections,
+            'planning_data': en_writer.planning_data,
+            'activity_log': en_writer.activity_log,
             'timestamp': timestamp
         }
         
@@ -453,7 +520,7 @@ def backup():
             json.dump(backup_data, f, indent=2, ensure_ascii=False)
         
         flash(f'Backup created: {backup_file}', 'success')
-        return redirect(url_for('index'))
+        return redirect(url_for('backup'))
     
     except Exception as e:
         flash(f'Backup failed: {str(e)}', 'error')
@@ -532,8 +599,8 @@ def project_analyze(project_id):
     project_sections = db.get_project_en_files(project_id) if hasattr(db, 'get_project_en_files') else []
     
     # Run gap analysis on project sections
-    gap_analysis = en_writer.en_writer.analyze_sections_for_gaps(project_sections)
-    questions = en_writer.generate_contextual_questions(gap_analysis)
+    gap_analysis = en_writer.analyze_sections_for_gaps(project_sections)
+    questions = en_writer.generate_user_questions(gap_analysis)
     
     return render_template('project_analyze.html', 
                          project=project,
@@ -568,36 +635,163 @@ def settings():
     if not en_writer:
         initialize_en_writer()
     
-    available_models = en_writer.openrouter.get_available_models()
-    current_model = en_writer.openrouter.get_current_model()
-    
-    # Convert to list of tuples (index, model) for template
-    available_models_with_index = list(enumerate(available_models))
-    
-    return render_template('settings.html', 
-                         available_models=available_models_with_index,
-                         current_model=current_model)
+    # Simple settings without AI model selection
+    return render_template('settings_simple.html')
 
 @app.route('/api/switch_model', methods=['POST'])
 def switch_model():
-    """Switch OpenRouter model"""
+    """Switch AI model (placeholder for n8n integration)"""
     if not en_writer:
         initialize_en_writer()
     
     try:
         data = request.get_json()
         model_index = data.get('model_index', 0)
-        success = en_writer.openrouter.switch_model(model_index)
         
-        if success:
-            return jsonify({'status': 'success', 
-                          'current_model': en_writer.openrouter.get_current_model()})
+        # Placeholder for n8n model switching
+        models = [
+            "deepseek/deepseek-chat-v3.1:free",
+            "gpt-oss-20b:free", 
+            "sonoma-dusk-alpha:free",
+            "kimi-k2:free",
+            "gemma-3n-2b:free",
+            "mistral-small-3.2-24b:free"
+        ]
+        
+        if 0 <= model_index < len(models):
+            return jsonify({
+                'status': 'success', 
+                'current_model': models[model_index],
+                'message': 'Model switching will be available when n8n is deployed'
+            })
         else:
             return jsonify({'status': 'error', 'message': 'Invalid model index'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-# AI chat endpoints removed - functionality moved to n8n workflows
+# n8n Integration
+N8N_WEBHOOK_URL = os.environ.get('N8N_WEBHOOK_URL', 'https://n8n-workflow-automation.onrender.com')
+
+@app.route('/api/n8n/status')
+def n8n_status():
+    """Check n8n connection status"""
+    try:
+        import requests
+        response = requests.get(f"{N8N_WEBHOOK_URL}/healthz", timeout=5)
+        if response.status_code == 200:
+            return jsonify({'status': 'connected', 'url': N8N_WEBHOOK_URL})
+        else:
+            return jsonify({'status': 'error', 'message': 'n8n not responding'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)})
+
+@app.route('/api/n8n/webhook/<workflow_id>', methods=['POST'])
+def n8n_webhook(workflow_id):
+    """Send data to n8n workflow"""
+    try:
+        import requests
+        data = request.get_json()
+        webhook_url = f"{N8N_WEBHOOK_URL}/webhook/{workflow_id}"
+        response = requests.post(webhook_url, json=data, timeout=30)
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# AI Service Task Management Endpoints
+@app.route('/api/ai/tasks', methods=['POST'])
+def create_ai_task():
+    """Create a new AI task"""
+    try:
+        data = request.get_json()
+        prompt_context = data.get('prompt_context', '')
+        agent_config = data.get('agent_config', {})
+        external_tool_endpoints = data.get('external_tool_endpoints', {})
+        
+        if not prompt_context:
+            return jsonify({'error': 'prompt_context is required'}), 400
+        
+        task_manager = get_task_manager()
+        task_id = task_manager.start_task(prompt_context, agent_config, external_tool_endpoints)
+        
+        return jsonify({
+            'task_id': task_id,
+            'status': 'created',
+            'message': 'Task created successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error creating AI task: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai/tasks/<task_id>', methods=['GET'])
+def get_ai_task_status(task_id):
+    """Get AI task status"""
+    try:
+        task_manager = get_task_manager()
+        response = task_manager.update_task_status(task_id)
+        
+        return jsonify({
+            'task_id': response.task_id,
+            'status': response.status,
+            'agent_reply': response.agent_reply,
+            'next_step': response.next_step,
+            'logs': response.logs,
+            'error': response.error
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting AI task status: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai/tasks/<task_id>', methods=['DELETE'])
+def cancel_ai_task(task_id):
+    """Cancel an AI task"""
+    try:
+        task_manager = get_task_manager()
+        success = task_manager.cancel_task(task_id)
+        
+        return jsonify({
+            'success': success,
+            'message': 'Task cancelled' if success else 'Failed to cancel task'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error cancelling AI task: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai/tasks', methods=['GET'])
+def list_ai_tasks():
+    """List all AI tasks"""
+    try:
+        task_manager = get_task_manager()
+        active_tasks = task_manager.get_active_tasks()
+        task_history = task_manager.get_task_history(limit=20)
+        
+        return jsonify({
+            'active_tasks': active_tasks,
+            'task_history': task_history
+        })
+        
+    except Exception as e:
+        logger.error(f"Error listing AI tasks: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai/health', methods=['GET'])
+def ai_service_health():
+    """Check AI service health"""
+    try:
+        ai_client = get_ai_client()
+        is_healthy = ai_client.health_check()
+        
+        return jsonify({
+            'healthy': is_healthy,
+            'service_url': ai_client.base_url,
+            'message': 'AI service is available' if is_healthy else 'AI service is unavailable'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error checking AI service health: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Create necessary directories
@@ -610,7 +804,7 @@ if __name__ == '__main__':
     initialize_en_writer()
     
     # Get port from environment variable (for Render)
-    port = int(os.environ.get('PORT', 5001))
+    port = int(os.environ.get('PORT', 5002))
     
     # Run the app with proper auto-reload configuration
     import os

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Sections - Notebooker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-white">
+                    <i class="fas fa-list me-2"></i>All Sections
+                </h1>
+                <div>
+                    <a href="{{ url_for('draft') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Section
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Engineering Notebook Sections
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if sections %}
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Section Name</th>
+                                        <th>Project</th>
+                                        <th>Status</th>
+                                        <th>Last Modified</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for section_name, section_content in sections.items() %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('view_section', section_name=section_name) }}" class="text-decoration-none">
+                                                {{ section_name.replace('_', ' ').title() }}
+                                            </a>
+                                        </td>
+                                        <td>No Project</td>
+                                        <td>
+                                            <span class="badge bg-warning">
+                                                Draft
+                                            </span>
+                                        </td>
+                                        <td>Never</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('view_section', section_name=section_name) }}" class="btn btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ url_for('rewrite', section_name=section_name) }}" class="btn btn-outline-warning">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No sections yet</h5>
+                            <p class="text-muted">Create your first engineering notebook section to get started.</p>
+                            <a href="{{ url_for('draft') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create Section
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

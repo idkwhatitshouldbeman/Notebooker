@@ -19,25 +19,15 @@ services:
       - key: DB_TYPE
         value: postgresdb
       - key: DB_POSTGRESDB_HOST
-        fromDatabase:
-          name: n8n-database
-          property: host
+        value: dpg-d32ft1idbo4c73adbolg-a.oregon-postgres.render.com
       - key: DB_POSTGRESDB_PORT
-        fromDatabase:
-          name: n8n-database
-          property: port
+        value: 5432
       - key: DB_POSTGRESDB_DATABASE
-        fromDatabase:
-          name: n8n-database
-          property: database
+        value: n8n_database_aumq
       - key: DB_POSTGRESDB_USER
-        fromDatabase:
-          name: n8n-database
-          property: user
+        value: n8n_database_aumq_user
       - key: DB_POSTGRESDB_PASSWORD
-        fromDatabase:
-          name: n8n-database
-          property: password
+        value: YuffOwjI0WV59rgZ7fOrZA8qV7TD0z9V
       - key: N8N_ENCRYPTION_KEY
         generateValue: true
       - key: N8N_USER_MANAGEMENT_DISABLED
@@ -49,8 +39,3 @@ services:
       - key: N8N_BASIC_AUTH_PASSWORD
         generateValue: true
 
-databases:
-  - name: n8n-database
-    databaseName: n8n_database_aumq
-    user: n8n_database_aumq_user
-    plan: free
