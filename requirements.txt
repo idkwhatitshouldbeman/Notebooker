@@ -1,0 +1,44 @@
+# Core FastAPI and web server dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Llama model dependencies
+transformers==4.36.0
+torch==2.1.0
+accelerate==0.25.0
+sentencepiece==0.1.99
+protobuf==4.25.1
+
+# Task management and state
+redis==5.0.1
+celery==5.3.4
+
+# HTTP client for external tool calls
+httpx==0.25.2
+aiohttp==3.9.1
+
+# Security and validation
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+cryptography==41.0.8
+
+# Logging and monitoring
+structlog==23.2.0
+python-json-logger==2.0.7
+
+# Environment and configuration
+python-dotenv==1.0.0
+pyyaml==6.0.1
+
+# Testing and development
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# Additional utilities
+asyncio-mqtt==0.16.1
+tenacity==8.2.3
+jsonschema==4.20.0
