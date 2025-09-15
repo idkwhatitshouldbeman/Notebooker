@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: List[str] = Field(default=["*"], env="ALLOWED_ORIGINS")
     
     # Model settings
-    MODEL_NAME: str = Field(default="meta-llama/Llama-3.2-1B", env="MODEL_NAME")
+    MODEL_NAME: str = Field(default="google/flan-t5-small", env="MODEL_NAME")
     MODEL_CACHE_DIR: str = Field(default="./model_cache", env="MODEL_CACHE_DIR")
     MAX_CONCURRENT_TASKS: int = Field(default=10, env="MAX_CONCURRENT_TASKS")
     

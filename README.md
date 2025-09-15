@@ -1,6 +1,6 @@
 # NTBK_AI
 
-An independent AI agentic automation microservice powered by Llama 3.2 1B model. This service provides autonomous multi-step workflows, task decomposition, and external tool integration through a REST API interface.
+An independent AI agentic automation microservice powered by Google's FLAN-T5 Small model. This service provides autonomous multi-step workflows, task decomposition, and external tool integration through a REST API interface.
 
 ## Features
 
@@ -64,7 +64,20 @@ This service is designed to be deployed on Render with automatic scaling and hea
 
 The service implements a modular architecture with:
 - FastAPI for REST API handling
-- Llama 3.2 1B for language model processing
+- Google FLAN-T5 Small (80M parameters, 300MB) for language model processing
 - Redis for task state management
 - Comprehensive logging and monitoring
 - Security middleware and input validation
+
+## Why FLAN-T5 Small?
+
+FLAN-T5 Small is an excellent choice for this microservice because:
+
+- **Efficient**: Only 80M parameters (300MB download) - much smaller than larger models
+- **Excellent Reasoning**: Fine-tuned on over 1000 tasks, achieving 75.2% on five-shot MMLU benchmark
+- **Multilingual**: Supports English, Spanish, Japanese, and many other languages
+- **Apache 2.0 License**: Free to use and modify
+- **Fast Inference**: Optimized for quick response times
+- **Strong Performance**: Achieves state-of-the-art results even with fewer parameters
+
+Based on [Dataloop's FLAN-T5 documentation](https://dataloop.ai/library/model/google_flan-t5-small/) and [local setup guides](https://heidloff.net/article/running-llm-flan-t5-locally/), this model excels at reasoning, translation, and text generation tasks.

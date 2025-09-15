@@ -1,6 +1,6 @@
 """
 NTBK_AI - Independent AI Agentic Automation Microservice
-Powered by Llama 3.2 1B model for autonomous multi-step workflows
+Powered by Google FLAN-T5 Small model for autonomous multi-step workflows
 """
 
 import asyncio
@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, validator
 import structlog
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from models.llama_agent import LlamaAgent
+from models.llama_agent import FlanT5Agent
 from services.task_manager import TaskManager
 from services.security import SecurityValidator
 from services.logger import setup_logging
@@ -32,7 +32,7 @@ logger = structlog.get_logger()
 # Initialize FastAPI app
 app = FastAPI(
     title="NTBK_AI Agentic Service",
-    description="Independent AI agentic automation microservice with Llama 3.2 1B",
+    description="Independent AI agentic automation microservice with Google FLAN-T5 Small",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -55,7 +55,7 @@ app.add_middleware(
 # Initialize services
 task_manager = TaskManager()
 security_validator = SecurityValidator()
-llama_agent = LlamaAgent()
+flan_agent = FlanT5Agent()
 
 # Pydantic models for API
 class AgentConfig(BaseModel):
@@ -222,10 +222,10 @@ async def process_agentic_task(
         )
 
 async def _process_task_with_agent(request: AgenticTaskRequest, task_context: Dict[str, Any]) -> Dict[str, Any]:
-    """Process the task using the Llama agent"""
+    """Process the task using the FLAN-T5 agent"""
     try:
         # Configure the agent
-        llama_agent.configure(
+        flan_agent.configure(
             temperature=request.agent_config.temperature,
             max_tokens=request.agent_config.max_tokens,
             stop_sequences=request.agent_config.stop_sequences,
@@ -235,7 +235,7 @@ async def _process_task_with_agent(request: AgenticTaskRequest, task_context: Di
         )
         
         # Process the task
-        result = await llama_agent.process_task(
+        result = await flan_agent.process_task(
             prompt_context=request.prompt_context,
             task_context=task_context,
             external_tools=request.external_tool_endpoints.dict()

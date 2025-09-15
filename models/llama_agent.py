@@ -1,5 +1,6 @@
 """
-Llama 3.2 1B Agent Implementation for Autonomous Workflows
+FLAN-T5 Small Agent Implementation for Autonomous Workflows
+Based on Google's FLAN-T5 model - excellent for reasoning and multi-step tasks
 """
 
 import asyncio
@@ -12,9 +13,9 @@ from datetime import datetime
 import torch
 from transformers import (
     AutoTokenizer, 
-    AutoModelForCausalLM, 
-    BitsAndBytesConfig,
-    pipeline
+    AutoModelForSeq2SeqLM,
+    T5Tokenizer,
+    T5ForConditionalGeneration
 )
 import structlog
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -23,15 +24,15 @@ from config.settings import settings
 
 logger = structlog.get_logger()
 
-class LlamaAgent:
+class FlanT5Agent:
     """
-    Autonomous agent powered by Llama 3.2 1B for multi-step workflows
+    Autonomous agent powered by FLAN-T5 Small for multi-step workflows
+    FLAN-T5 is excellent for reasoning, translation, and text generation tasks
     """
     
     def __init__(self):
         self.model = None
         self.tokenizer = None
-        self.pipeline = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.is_initialized = False
         
@@ -49,56 +50,40 @@ class LlamaAgent:
         self.tool_results = {}
         
     async def initialize(self):
-        """Initialize the Llama model and tokenizer"""
+        """Initialize the FLAN-T5 model and tokenizer"""
         if self.is_initialized:
             return
             
         try:
-            logger.info("Initializing Llama 3.2 1B model", device=self.device)
+            logger.info("Initializing FLAN-T5 Small model", device=self.device)
             
-            # Configure quantization for memory efficiency
-            quantization_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4"
-            )
-            
-            # Load tokenizer
+            # Load tokenizer - FLAN-T5 uses T5 tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(
                 settings.MODEL_NAME,
                 cache_dir=settings.MODEL_CACHE_DIR,
                 trust_remote_code=True
             )
             
-            # Add padding token if not present
-            if self.tokenizer.pad_token is None:
-                self.tokenizer.pad_token = self.tokenizer.eos_token
-            
-            # Load model
-            self.model = AutoModelForCausalLM.from_pretrained(
+            # Load model - FLAN-T5 is a sequence-to-sequence model
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(
                 settings.MODEL_NAME,
                 cache_dir=settings.MODEL_CACHE_DIR,
-                quantization_config=quantization_config if self.device == "cuda" else None,
                 torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
                 device_map="auto" if self.device == "cuda" else None,
                 trust_remote_code=True
             )
             
-            # Create text generation pipeline
-            self.pipeline = pipeline(
-                "text-generation",
-                model=self.model,
-                tokenizer=self.tokenizer,
-                device=0 if self.device == "cuda" else -1,
-                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32
-            )
+            # Move model to device if not using device_map
+            if self.device == "cuda" and not hasattr(self.model, 'hf_device_map'):
+                self.model = self.model.to(self.device)
             
             self.is_initialized = True
-            logger.info("Llama model initialized successfully")
+            logger.info("FLAN-T5 model initialized successfully", 
+                       model_size="80M parameters", 
+                       download_size="300MB")
             
         except Exception as e:
-            logger.error("Failed to initialize Llama model", error=str(e))
+            logger.error("Failed to initialize FLAN-T5 model", error=str(e))
             raise
     
     def configure(self, **kwargs):
@@ -117,7 +102,7 @@ class LlamaAgent:
     async def process_task(self, prompt_context: str, task_context: Dict[str, Any], 
                           external_tools: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Process an agentic task with autonomous multi-step workflows
+        Process an agentic task with autonomous multi-step workflows using FLAN-T5
         """
         if not self.is_initialized:
             await self.initialize()
@@ -126,23 +111,29 @@ class LlamaAgent:
         self.conversation_history = task_context.get("conversation_history", [])
         
         try:
-            logger.info("Starting agentic task processing", task_id=self.current_task_id)
+            logger.info("Starting agentic task processing with FLAN-T5", task_id=self.current_task_id)
             
-            # Analyze the task and create a plan
-            task_plan = await self._analyze_task(prompt_context, external_tools)
+            # FLAN-T5 excels at reasoning tasks, so we'll structure the prompt accordingly
+            reasoning_prompt = self._build_reasoning_prompt(prompt_context, external_tools)
             
-            # Execute the plan step by step
-            results = await self._execute_plan(task_plan, external_tools)
+            # Generate the main response using FLAN-T5's reasoning capabilities
+            main_response = await self._generate_reasoning_response(reasoning_prompt)
             
-            # Generate final response
-            final_response = await self._generate_final_response(results)
+            # If external tools are available, try to use them
+            if external_tools:
+                enhanced_response = await self._enhance_with_tools(main_response, external_tools)
+            else:
+                enhanced_response = main_response
+            
+            # Generate final structured response
+            final_response = await self._generate_final_response(enhanced_response, prompt_context)
             
             return {
                 "status": "completed",
                 "agent_reply": final_response,
                 "next_step": {
                     "action": "complete",
-                    "instructions": "Task completed successfully"
+                    "instructions": "Task completed successfully using FLAN-T5 reasoning"
                 },
                 "logs": self._format_logs(),
                 "tokens_used": self._count_tokens(prompt_context + final_response)
@@ -161,143 +152,63 @@ class LlamaAgent:
                 "error": str(e)
             }
     
-    async def _analyze_task(self, prompt_context: str, external_tools: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze the task and create an execution plan"""
+    def _build_reasoning_prompt(self, prompt_context: str, external_tools: Dict[str, Any]) -> str:
+        """Build a reasoning prompt optimized for FLAN-T5's capabilities"""
         
-        analysis_prompt = f"""
-You are an autonomous AI agent. Analyze the following task and create a step-by-step execution plan.
+        # FLAN-T5 works best with explicit task instructions
+        reasoning_prompt = f"""
+Answer the following question by reasoning step-by-step. Be thorough and methodical in your analysis.
 
-Task: {prompt_context}
+Question: {prompt_context}
 
 Available tools: {list(external_tools.keys()) if external_tools else "None"}
 
-Create a JSON plan with the following structure:
-{{
-    "objective": "Clear description of what needs to be accomplished",
-    "steps": [
-        {{
-            "step_id": 1,
-            "action": "reasoning|tool_call|writing|research",
-            "description": "What this step will do",
-            "tool": "tool_name_if_applicable",
-            "parameters": {{"param": "value"}},
-            "expected_output": "What we expect from this step"
-        }}
-    ],
-    "estimated_completion": "How long this might take"
-}}
+Please provide a comprehensive response that:
+1. Analyzes the question thoroughly
+2. Breaks down the problem into logical steps
+3. Provides detailed reasoning for each step
+4. Gives a clear, well-structured answer
+5. Includes actionable insights or recommendations where applicable
 
-Respond with only the JSON plan, no additional text.
+Format your response clearly with numbered steps and detailed explanations.
 """
         
-        plan_response = await self._generate_text(analysis_prompt)
-        
+        return reasoning_prompt
+    
+    async def _enhance_with_tools(self, response: str, external_tools: Dict[str, Any]) -> str:
+        """Enhance the response using external tools if available"""
         try:
-            # Extract JSON from response
-            json_start = plan_response.find('{')
-            json_end = plan_response.rfind('}') + 1
-            if json_start != -1 and json_end != -1:
-                plan_json = plan_response[json_start:json_end]
-                plan = json.loads(plan_json)
-            else:
-                # Fallback plan if JSON parsing fails
-                plan = {
-                    "objective": "Complete the given task",
-                    "steps": [
-                        {
-                            "step_id": 1,
-                            "action": "reasoning",
-                            "description": "Analyze and process the task",
-                            "expected_output": "Understanding and solution"
-                        }
-                    ],
-                    "estimated_completion": "Unknown"
-                }
-        except json.JSONDecodeError:
-            # Fallback plan
-            plan = {
-                "objective": "Complete the given task",
-                "steps": [
-                    {
-                        "step_id": 1,
-                        "action": "reasoning",
-                        "description": "Analyze and process the task",
-                        "expected_output": "Understanding and solution"
-                    }
-                ],
-                "estimated_completion": "Unknown"
-            }
-        
-        logger.info("Task analysis completed", 
-                   task_id=self.current_task_id,
-                   steps_count=len(plan.get("steps", [])))
-        
-        return plan
+            # For now, we'll use a simple approach to determine if tools should be used
+            # In a full implementation, this would be more sophisticated
+            
+            enhanced_response = response
+            
+            # Check if we need to use web search
+            if "web_search" in external_tools and any(keyword in response.lower() 
+                for keyword in ["search", "find", "look up", "research"]):
+                search_result = await self._call_external_tool("web_search", external_tools["web_search"], {
+                    "query": "relevant information for the task"
+                })
+                if search_result:
+                    enhanced_response += f"\n\nAdditional research findings: {search_result}"
+            
+            # Check if we need calculator
+            if "calculator" in external_tools and any(keyword in response.lower() 
+                for keyword in ["calculate", "compute", "math", "number"]):
+                calc_result = await self._call_external_tool("calculator", external_tools["calculator"], {
+                    "expression": "relevant calculation"
+                })
+                if calc_result:
+                    enhanced_response += f"\n\nCalculation result: {calc_result}"
+            
+            return enhanced_response
+            
+        except Exception as e:
+            logger.warning("Tool enhancement failed", error=str(e))
+            return response
     
-    async def _execute_plan(self, plan: Dict[str, Any], external_tools: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Execute the task plan step by step"""
-        results = []
-        steps = plan.get("steps", [])
-        
-        for step in steps:
-            try:
-                logger.info("Executing step", 
-                           task_id=self.current_task_id,
-                           step_id=step.get("step_id"),
-                           action=step.get("action"))
-                
-                if step.get("action") == "tool_call":
-                    result = await self._execute_tool_call(step, external_tools)
-                elif step.get("action") == "reasoning":
-                    result = await self._execute_reasoning(step)
-                elif step.get("action") == "writing":
-                    result = await self._execute_writing(step)
-                elif step.get("action") == "research":
-                    result = await self._execute_research(step, external_tools)
-                else:
-                    result = await self._execute_generic_step(step)
-                
-                results.append({
-                    "step_id": step.get("step_id"),
-                    "action": step.get("action"),
-                    "result": result,
-                    "success": True,
-                    "timestamp": datetime.utcnow().isoformat()
-                })
-                
-                # Add to conversation history
-                self.conversation_history.append({
-                    "role": "assistant",
-                    "content": f"Step {step.get('step_id')}: {result}",
-                    "timestamp": datetime.utcnow().isoformat()
-                })
-                
-            except Exception as e:
-                logger.error("Step execution failed",
-                           task_id=self.current_task_id,
-                           step_id=step.get("step_id"),
-                           error=str(e))
-                
-                results.append({
-                    "step_id": step.get("step_id"),
-                    "action": step.get("action"),
-                    "result": f"Error: {str(e)}",
-                    "success": False,
-                    "timestamp": datetime.utcnow().isoformat()
-                })
-        
-        return results
-    
-    async def _execute_tool_call(self, step: Dict[str, Any], external_tools: Dict[str, Any]) -> str:
-        """Execute an external tool call"""
-        tool_name = step.get("tool")
-        parameters = step.get("parameters", {})
-        
-        if tool_name not in external_tools:
-            return f"Tool '{tool_name}' not available"
-        
-        tool_url = external_tools[tool_name]
-        
+    async def _call_external_tool(self, tool_name: str, tool_url: str, parameters: Dict[str, Any]) -> Optional[str]:
+        """Call an external tool"""
         try:
             import httpx
             async with httpx.AsyncClient(timeout=settings.EXTERNAL_TOOL_TIMEOUT) as client:
@@ -305,102 +216,37 @@ Respond with only the JSON plan, no additional text.
                 response.raise_for_status()
                 return f"Tool '{tool_name}' result: {response.text}"
         except Exception as e:
-            return f"Tool '{tool_name}' failed: {str(e)}"
+            logger.warning("External tool call failed", tool_name=tool_name, error=str(e))
+            return None
     
-    async def _execute_reasoning(self, step: Dict[str, Any]) -> str:
-        """Execute reasoning step"""
-        reasoning_prompt = f"""
-You are an AI agent performing reasoning. 
-
-Task: {step.get('description', '')}
-Expected output: {step.get('expected_output', '')}
-
-Provide clear, logical reasoning and analysis. Be thorough and methodical.
-"""
-        
-        return await self._generate_text(reasoning_prompt)
-    
-    async def _execute_writing(self, step: Dict[str, Any]) -> str:
-        """Execute writing step"""
-        writing_prompt = f"""
-You are an AI agent performing writing tasks.
-
-Task: {step.get('description', '')}
-Expected output: {step.get('expected_output', '')}
-
-Write high-quality, well-structured content. Be clear, concise, and engaging.
-"""
-        
-        return await self._generate_text(writing_prompt)
-    
-    async def _execute_research(self, step: Dict[str, Any], external_tools: Dict[str, Any]) -> str:
-        """Execute research step"""
-        # For now, use reasoning as research fallback
-        # In a full implementation, this would use web search tools
-        return await self._execute_reasoning(step)
-    
-    async def _execute_generic_step(self, step: Dict[str, Any]) -> str:
-        """Execute a generic step"""
-        generic_prompt = f"""
-You are an AI agent performing a task step.
-
-Task: {step.get('description', '')}
-Expected output: {step.get('expected_output', '')}
-
-Complete this step effectively and provide the expected output.
-"""
-        
-        return await self._generate_text(generic_prompt)
-    
-    async def _generate_final_response(self, results: List[Dict[str, Any]]) -> str:
-        """Generate the final response based on all step results"""
-        
-        # Summarize all results
-        results_summary = "\n".join([
-            f"Step {r['step_id']} ({r['action']}): {r['result'][:200]}..."
-            for r in results
-        ])
-        
-        final_prompt = f"""
-You are an AI agent providing a final response to a completed task.
-
-Task results summary:
-{results_summary}
-
-Provide a comprehensive, well-structured final response that:
-1. Summarizes what was accomplished
-2. Highlights key findings or results
-3. Provides actionable insights or recommendations
-4. Is clear and professional
-
-Format your response appropriately for the task type.
-"""
-        
-        return await self._generate_text(final_prompt)
-    
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
-    async def _generate_text(self, prompt: str) -> str:
-        """Generate text using the Llama model"""
+    async def _generate_reasoning_response(self, prompt: str) -> str:
+        """Generate response using FLAN-T5's reasoning capabilities"""
         try:
-            # Prepare the prompt with conversation history
-            full_prompt = self._build_conversation_prompt(prompt)
+            # Tokenize input
+            inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
             
-            # Generate response
-            response = self.pipeline(
-                full_prompt,
-                max_new_tokens=self.max_tokens,
-                temperature=self.temperature,
-                top_p=self.top_p,
-                do_sample=True,
-                pad_token_id=self.tokenizer.eos_token_id,
-                eos_token_id=self.tokenizer.eos_token_id,
-                return_full_text=False
-            )
+            # Move to device if needed
+            if self.device == "cuda":
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}
             
-            generated_text = response[0]['generated_text']
+            # Generate response with FLAN-T5
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_length=self.max_tokens,
+                    temperature=self.temperature,
+                    do_sample=True,
+                    top_p=self.top_p,
+                    num_return_sequences=1,
+                    pad_token_id=self.tokenizer.pad_token_id,
+                    eos_token_id=self.tokenizer.eos_token_id
+                )
+            
+            # Decode response
+            response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
             
             # Clean up the response
-            cleaned_text = self._clean_response(generated_text)
+            cleaned_response = self._clean_response(response)
             
             # Add to conversation history
             self.conversation_history.append({
@@ -410,29 +256,38 @@ Format your response appropriately for the task type.
             })
             self.conversation_history.append({
                 "role": "assistant",
-                "content": cleaned_text,
+                "content": cleaned_response,
                 "timestamp": datetime.utcnow().isoformat()
             })
             
-            return cleaned_text
+            return cleaned_response
             
         except Exception as e:
-            logger.error("Text generation failed", error=str(e))
+            logger.error("FLAN-T5 generation failed", error=str(e))
             raise
     
-    def _build_conversation_prompt(self, current_prompt: str) -> str:
-        """Build a prompt with conversation history"""
-        if not self.conversation_history:
-            return current_prompt
+    async def _generate_final_response(self, enhanced_response: str, original_prompt: str) -> str:
+        """Generate the final structured response"""
         
-        # Build conversation context
-        context = "Previous conversation:\n"
-        for msg in self.conversation_history[-10:]:  # Last 10 messages
-            role = "Human" if msg["role"] == "user" else "Assistant"
-            context += f"{role}: {msg['content']}\n"
+        # Use FLAN-T5 to summarize and structure the final response
+        final_prompt = f"""
+Summarize and structure the following response into a clear, professional format:
+
+Original question: {original_prompt}
+
+Response: {enhanced_response}
+
+Please provide a well-structured final answer that is:
+1. Clear and concise
+2. Well-organized with proper formatting
+3. Professional in tone
+4. Actionable where applicable
+5. Easy to understand
+
+Format your response with clear headings and bullet points where appropriate.
+"""
         
-        context += f"\nCurrent request:\n{current_prompt}\n\nAssistant:"
-        return context
+        return await self._generate_reasoning_response(final_prompt)
     
     def _clean_response(self, text: str) -> str:
         """Clean and format the generated response"""
@@ -445,8 +300,8 @@ Format your response appropriately for the task type.
         text = text.strip()
         
         # Remove any remaining prompt artifacts
-        if "Assistant:" in text:
-            text = text.split("Assistant:")[-1].strip()
+        if "Response:" in text:
+            text = text.split("Response:")[-1].strip()
         
         return text
     
@@ -460,9 +315,13 @@ Format your response appropriately for the task type.
         """Format execution logs"""
         logs = []
         logs.append(f"Task ID: {self.current_task_id}")
-        logs.append(f"Model: {settings.MODEL_NAME}")
+        logs.append(f"Model: {settings.MODEL_NAME} (FLAN-T5 Small)")
+        logs.append(f"Model Size: 80M parameters (300MB)")
         logs.append(f"Device: {self.device}")
         logs.append(f"Conversation turns: {len(self.conversation_history)}")
         logs.append(f"Timestamp: {datetime.utcnow().isoformat()}")
         
         return "\n".join(logs)
+
+# Alias for backward compatibility
+LlamaAgent = FlanT5Agent

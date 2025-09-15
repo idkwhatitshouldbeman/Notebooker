@@ -1,6 +1,6 @@
 {
   "task_id": "example-task-001",
-  "prompt_context": "Write a comprehensive analysis of the benefits and challenges of implementing AI automation in small businesses. Include specific examples and actionable recommendations.",
+  "prompt_context": "Answer the following question by reasoning step-by-step: What are the key factors that determine whether a small business should invest in AI automation? Consider costs, benefits, risks, and implementation challenges. Provide a structured analysis with clear recommendations.",
   "agent_config": {
     "temperature": 0.7,
     "max_tokens": 1500,
