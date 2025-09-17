@@ -1,6 +1,6 @@
 [build]
   # Build command for static site generation
-  command = "npm run build"
+  command = "npm install && npm run build"
   
   # Directory to publish
   publish = "dist"

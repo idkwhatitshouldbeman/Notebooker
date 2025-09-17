@@ -9,22 +9,19 @@ from typing import Dict, Any
 # AI Service Configuration
 AI_SERVICE_CONFIG = {
     # Default AI service URL (can be overridden by environment variable)
-    'base_url': os.environ.get('AI_SERVICE_URL', 'https://n8n-workflow-automation.onrender.com'),
+    'base_url': os.environ.get('AI_SERVICE_URL', 'https://your-render-app-name.onrender.com'),
     
     # API Key for authentication (optional)
     'api_key': os.environ.get('AI_API_KEY'),
     
     # Default model configuration
-    'default_model': 'deepseek/deepseek-chat-v3.1:free',
+    'default_model': 'flan-t5-small',
     
     # Available models
     'available_models': [
-        'deepseek/deepseek-chat-v3.1:free',
-        'gpt-oss-20b:free',
-        'sonoma-dusk-alpha:free',
-        'kimi-k2:free',
-        'gemma-3n-2b:free',
-        'mistral-small-3.2-24b:free'
+        'flan-t5-small',
+        'flan-t5-base',
+        'flan-t5-large'
     ],
     
     # Task configuration
@@ -37,35 +34,29 @@ AI_SERVICE_CONFIG = {
     
     # Model-specific configurations
     'model_configs': {
-        'deepseek/deepseek-chat-v3.1:free': {
+        'flan-t5-small': {
             'temperature': 0.7,
-            'max_tokens': 2000,
-            'timeout': 300
+            'max_tokens': 1000,
+            'timeout': 300,
+            'top_p': 0.9,
+            'frequency_penalty': 0.0,
+            'presence_penalty': 0.0
         },
-        'gpt-oss-20b:free': {
+        'flan-t5-base': {
             'temperature': 0.7,
             'max_tokens': 1500,
-            'timeout': 300
+            'timeout': 300,
+            'top_p': 0.9,
+            'frequency_penalty': 0.0,
+            'presence_penalty': 0.0
         },
-        'sonoma-dusk-alpha:free': {
-            'temperature': 0.6,
-            'max_tokens': 1800,
-            'timeout': 300
-        },
-        'kimi-k2:free': {
+        'flan-t5-large': {
             'temperature': 0.7,
             'max_tokens': 2000,
-            'timeout': 300
-        },
-        'gemma-3n-2b:free': {
-            'temperature': 0.8,
-            'max_tokens': 1200,
-            'timeout': 300
-        },
-        'mistral-small-3.2-24b:free': {
-            'temperature': 0.7,
-            'max_tokens': 1600,
-            'timeout': 300
+            'timeout': 300,
+            'top_p': 0.9,
+            'frequency_penalty': 0.0,
+            'presence_penalty': 0.0
         }
     }
 }

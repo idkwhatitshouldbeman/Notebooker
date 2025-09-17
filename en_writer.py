@@ -207,7 +207,7 @@ class ENWriter:
             task_manager = get_task_manager()
             
             agent_config = AgentConfig(
-                model="deepseek/deepseek-chat-v3.1:free",
+                model="flan-t5-small",
                 temperature=0.7,
                 max_tokens=500
             )
@@ -323,7 +323,7 @@ class ENWriter:
             task_manager = get_task_manager()
             
             agent_config = AgentConfig(
-                model="deepseek/deepseek-chat-v3.1:free",
+                model="flan-t5-small",
                 temperature=0.7,
                 max_tokens=1500
             )
@@ -512,7 +512,7 @@ class ENWriter:
             task_manager = get_task_manager()
             
             agent_config = AgentConfig(
-                model="deepseek/deepseek-chat-v3.1:free",
+                model="flan-t5-small",
                 temperature=0.5,  # Lower temperature for more consistent rewriting
                 max_tokens=2000
             )

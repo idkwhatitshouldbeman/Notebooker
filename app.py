@@ -65,7 +65,7 @@ def initialize_en_writer():
     en_writer = ENWriter(str(base_dir))
     
     # Initialize AI service
-    ai_service_url = os.environ.get('AI_SERVICE_URL', 'https://n8n-workflow-automation.onrender.com')
+    ai_service_url = os.environ.get('AI_SERVICE_URL', 'https://your-render-app-name.onrender.com')
     ai_api_key = os.environ.get('AI_API_KEY')
     initialize_ai_service(ai_service_url, ai_api_key)
 
@@ -669,29 +669,29 @@ def switch_model():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-# n8n Integration
-N8N_WEBHOOK_URL = os.environ.get('N8N_WEBHOOK_URL', 'https://n8n-workflow-automation.onrender.com')
+# AI Service Integration
+AI_SERVICE_URL = os.environ.get('AI_SERVICE_URL', 'https://your-render-app-name.onrender.com')
 
-@app.route('/api/n8n/status')
-def n8n_status():
-    """Check n8n connection status"""
+@app.route('/api/ai/status')
+def ai_status():
+    """Check AI service connection status"""
     try:
         import requests
-        response = requests.get(f"{N8N_WEBHOOK_URL}/healthz", timeout=5)
+        response = requests.get(f"{AI_SERVICE_URL}/health", timeout=5)
         if response.status_code == 200:
-            return jsonify({'status': 'connected', 'url': N8N_WEBHOOK_URL})
+            return jsonify({'status': 'connected', 'url': AI_SERVICE_URL})
         else:
-            return jsonify({'status': 'error', 'message': 'n8n not responding'})
+            return jsonify({'status': 'error', 'message': 'AI service not responding'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-@app.route('/api/n8n/webhook/<workflow_id>', methods=['POST'])
-def n8n_webhook(workflow_id):
-    """Send data to n8n workflow"""
+@app.route('/api/ai/webhook/<workflow_id>', methods=['POST'])
+def ai_webhook(workflow_id):
+    """Send data to AI service workflow"""
     try:
         import requests
         data = request.get_json()
-        webhook_url = f"{N8N_WEBHOOK_URL}/webhook/{workflow_id}"
+        webhook_url = f"{AI_SERVICE_URL}/webhook/{workflow_id}"
         response = requests.post(webhook_url, json=data, timeout=30)
         return jsonify(response.json())
     except Exception as e:

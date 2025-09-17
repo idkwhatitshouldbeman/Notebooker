@@ -52,7 +52,7 @@ class AIServiceClient:
     """Client for communicating with AI Automation Service"""
     
     def __init__(self, base_url: str = None, api_key: str = None):
-        self.base_url = base_url or "https://n8n-workflow-automation.onrender.com"
+        self.base_url = base_url or "https://your-render-app-name.onrender.com"
         self.api_key = api_key
         self.session = requests.Session()
         
@@ -195,7 +195,7 @@ class AIServiceClient:
         Check if AI service is available
         """
         try:
-            response = self.session.get(f"{self.base_url}/healthz", timeout=5)
+            response = self.session.get(f"{self.base_url}/health", timeout=5)
             return response.status_code == 200
         except:
             return False
