@@ -95,7 +95,7 @@ class AgenticTaskRequest(BaseModel):
 
 class NextStep(BaseModel):
     """Next step instructions for the client"""
-    action: str = Field(..., regex="^(continue|complete|wait_for_tool|retry)$")
+    action: str = Field(..., pattern="^(continue|complete|wait_for_tool|retry)$")
     instructions: str
     tool_calls: Optional[List[Dict[str, Any]]] = None
     estimated_duration: Optional[int] = None  # seconds
@@ -103,7 +103,7 @@ class NextStep(BaseModel):
 class AgenticTaskResponse(BaseModel):
     """Response model for agentic task processing"""
     task_id: str
-    status: str = Field(..., regex="^(in_progress|completed|failed)$")
+    status: str = Field(..., pattern="^(in_progress|completed|failed)$")
     agent_reply: str
     next_step: NextStep
     logs: str
