@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-white">
+                    <i class="fas fa-chart-line me-2"></i>{{ project.name }} - Analysis
+                </h1>
+                <div>
+                    <a href="{{ url_for('project_workspace', project_id=project.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Project
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-search me-2"></i>Project Analysis Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if analysis_results %}
+                        <div class="analysis-results">
+                            <h6 class="text-primary mb-3">Content Gaps Identified:</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for gap in analysis_results.gaps %}
+                                <li class="list-group-item bg-dark text-white border-secondary">
+                                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                    {{ gap }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+
+                            <h6 class="text-success mt-4 mb-3">Strengths:</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for strength in analysis_results.strengths %}
+                                <li class="list-group-item bg-dark text-white border-secondary">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    {{ strength }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+
+                            <h6 class="text-info mt-4 mb-3">Recommendations:</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for rec in analysis_results.recommendations %}
+                                <li class="list-group-item bg-dark text-white border-secondary">
+                                    <i class="fas fa-lightbulb text-info me-2"></i>
+                                    {{ rec }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Analysis Available</h5>
+                            <p class="text-muted">Run content analysis to identify gaps and improvements for this project.</p>
+                            <button type="button" class="btn btn-primary" onclick="runProjectAnalysis()">
+                                <i class="fas fa-play me-2"></i>Run Analysis
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Project Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-5">Project:</dt>
+                        <dd class="col-sm-7">{{ project.name }}</dd>
+                        
+                        <dt class="col-sm-5">Status:</dt>
+                        <dd class="col-sm-7">
+                            <span class="badge bg-{{ 'success' if project.status == 'completed' else 'warning' }}">
+                                {{ project.status.title() }}
+                            </span>
+                        </dd>
+                        
+                        <dt class="col-sm-5">Sections:</dt>
+                        <dd class="col-sm-7">{{ sections | length }}</dd>
+                        
+                        <dt class="col-sm-5">Created:</dt>
+                        <dd class="col-sm-7">{{ project.created_at if project.created_at else 'Unknown' }}</dd>
+                        
+                        <dt class="col-sm-5">Modified:</dt>
+                        <dd class="col-sm-7">{{ project.updated_at if project.updated_at else 'Never' }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>Analysis Options
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="analysis-form">
+                        <div class="mb-3">
+                            <label for="analysis_type" class="form-label">Analysis Type</label>
+                            <select class="form-select" id="analysis_type" name="analysis_type">
+                                <option value="completeness">Content Completeness</option>
+                                <option value="quality">Content Quality</option>
+                                <option value="structure">Document Structure</option>
+                                <option value="technical">Technical Accuracy</option>
+                                <option value="comprehensive">Comprehensive Analysis</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Include Sections</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="include_all" checked>
+                                <label class="form-check-label" for="include_all">
+                                    All sections
+                                </label>
+                            </div>
+                            {% for section in sections %}
+                            <div class="form-check">
+                                <input class="form-check-input section-checkbox" type="checkbox" value="{{ section.id }}" checked>
+                                <label class="form-check-label" for="section_{{ section.id }}">
+                                    {{ section.title }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="button" class="btn btn-primary w-100" onclick="runProjectAnalysis()">
+                            <i class="fas fa-play me-2"></i>Run Analysis
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Status Overview -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Section Status Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-success">{{ sections | selectattr('status', 'equalto', 'completed') | list | length }}</h4>
+                                <p class="text-muted">Completed</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-warning">{{ sections | selectattr('status', 'equalto', 'in_progress') | list | length }}</h4>
+                                <p class="text-muted">In Progress</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-info">{{ sections | selectattr('status', 'equalto', 'draft') | list | length }}</h4>
+                                <p class="text-muted">Draft</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-secondary">{{ sections | selectattr('status', 'equalto', 'not_started') | list | length }}</h4>
+                                <p class="text-muted">Not Started</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function runProjectAnalysis() {
+    const form = document.getElementById('analysis-form');
+    const formData = new FormData(form);
+    
+    // Add selected sections
+    const selectedSections = Array.from(document.querySelectorAll('.section-checkbox:checked')).map(cb => cb.value);
+    formData.append('selected_sections', JSON.stringify(selectedSections));
+    
+    // Show loading state
+    const button = document.querySelector('button[onclick="runProjectAnalysis()"]');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analyzing...';
+    button.disabled = true;
+    
+    fetch('{{ url_for("run_project_analysis", project_id=project.id) }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error running analysis: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error running analysis: ' + error.message);
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+</script>
+{% endblock %}

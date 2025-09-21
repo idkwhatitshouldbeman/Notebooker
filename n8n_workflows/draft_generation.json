@@ -1,0 +1,116 @@
+{
+  "name": "Draft Generation Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-draft",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "generate-draft"
+    },
+    {
+      "parameters": {
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{ $credentials.openRouterApi.apiKey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "={{ $json.model || 'deepseek/deepseek-chat-v3.1:free' }}"
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"role\": \"system\", \"content\": \"You are an expert engineering documentation writer specializing in robotics and technical systems. Create comprehensive, well-structured engineering notebook sections with proper technical depth and clarity.\"}, {\"role\": \"user\", \"content\": \"Generate a draft engineering notebook section with the following details:\\n\\nTitle: {{ $json.title || 'Engineering Section' }}\\nOverview: {{ $json.overview || 'General overview' }}\\nTechnical Details: {{ $json.technical_details || 'Technical specifications' }}\\nImplementation: {{ $json.implementation || 'Implementation approach' }}\\nTesting: {{ $json.testing || 'Testing procedures' }}\\nResults: {{ $json.results || 'Expected results' }}\\nImprovements: {{ $json.improvements || 'Future improvements' }}\\n\\nPlease create a comprehensive draft that includes:\\n1. Clear section structure with proper headings\\n2. Technical depth appropriate for engineering documentation\\n3. Implementation details and methodology\\n4. Testing and validation procedures\\n5. Results analysis and future improvements\\n6. Proper formatting with markdown\\n\\nMake it professional and technically rigorous.\"}]"
+            },
+            {
+              "name": "max_tokens",
+              "value": "3000"
+            },
+            {
+              "name": "temperature",
+              "value": "0.5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ai-draft-generation",
+      "name": "AI Draft Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "openRouterApi": {
+          "id": "openrouter-credentials",
+          "name": "OpenRouter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"draft\": $json.choices[0].message.content, \"model\": $json.model, \"usage\": $json.usage, \"timestamp\": new Date().toISOString() } }}"
+      },
+      "id": "response-node",
+      "name": "Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Draft Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Draft Generation": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "draft-generation",
+  "tags": ["ai", "draft", "notebooker"]
+}
+

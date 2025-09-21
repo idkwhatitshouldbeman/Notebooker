@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Create Project - Notebooker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0 text-white">
+                    <i class="fas fa-plus-circle me-2"></i>Create New Project
+                </h1>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-folder-plus me-2"></i>Project Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('create_project') }}">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">
+                                <i class="fas fa-tag me-2"></i>Project Name
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="name" 
+                                   name="name" 
+                                   placeholder="Enter project name (e.g., Robot Arm Control System)"
+                                   required
+                                   maxlength="100">
+                            <div class="form-text text-muted">
+                                Choose a descriptive name for your engineering project
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Description
+                            </label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="4" 
+                                      placeholder="Describe your project goals, scope, and key objectives..."
+                                      maxlength="500"></textarea>
+                            <div class="form-text text-muted">
+                                Optional: Provide a brief description of your project
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Create Project
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Project Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Project Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Clear Naming:</strong> Use descriptive names that reflect your project's purpose
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Documentation:</strong> Add a description to help organize your work
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Organization:</strong> You can create multiple projects for different engineering tasks
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Collaboration:</strong> Projects help organize your engineering notebook sections
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.25);
+}
+
+.form-label {
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.form-text {
+    color: var(--text-muted);
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(14, 165, 233, 0.15);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--secondary-blue), var(--accent-blue));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+}
+
+.btn-outline-secondary {
+    border-color: var(--light-gray);
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    background: var(--light-gray);
+    border-color: var(--light-gray);
+    color: var(--text-light);
+}
+</style>
+
+<script>
+// Auto-focus on project name field
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('name').focus();
+});
+
+// Character counter for description
+document.getElementById('description').addEventListener('input', function() {
+    const maxLength = 500;
+    const currentLength = this.value.length;
+    const remaining = maxLength - currentLength;
+    
+    // Update character count display
+    let counter = document.getElementById('char-counter');
+    if (!counter) {
+        counter = document.createElement('div');
+        counter.id = 'char-counter';
+        counter.className = 'form-text text-end';
+        this.parentNode.appendChild(counter);
+    }
+    
+    counter.textContent = `${currentLength}/${maxLength} characters`;
+    
+    if (remaining < 50) {
+        counter.style.color = '#f59e0b';
+    } else if (remaining < 0) {
+        counter.style.color = '#ef4444';
+    } else {
+        counter.style.color = 'var(--text-muted)';
+    }
+});
+</script>
+{% endblock %}

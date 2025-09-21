@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Content Analysis - Notebooker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-white">
+                <i class="fas fa-chart-line me-2"></i>Content Analysis
+            </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Analysis Results</h5>
+                </div>
+                <div class="card-body">
+                    {% if gap_analysis %}
+                        <p>Gap analysis completed!</p>
+                        <p>Analysis type: {{ gap_analysis.get('analysis_type', 'Unknown') }}</p>
+                    {% else %}
+                        <p>No gap analysis available</p>
+                    {% endif %}
+                    
+                    {% if questions %}
+                        <h6>Questions:</h6>
+                        <ul>
+                            {% for question in questions %}
+                            <li>{{ question }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

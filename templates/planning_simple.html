@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Planning Sheet - Notebooker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-white">
+                <i class="fas fa-calendar-alt me-2"></i>Planning Sheet
+            </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Planning Data</h5>
+                </div>
+                <div class="card-body">
+                    {% if planning_data %}
+                        <p>Planning data exists!</p>
+                        <p>Last updated: {{ planning_data.last_updated if planning_data.last_updated else 'Never' }}</p>
+                        <p>Current focus: {{ planning_data.current_focus if planning_data.current_focus else 'None' }}</p>
+                    {% else %}
+                        <p>No planning data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
