@@ -12,8 +12,12 @@
   # Node.js version
   NODE_VERSION = "18"
   
-  # Python version for serverless functions
-  PYTHON_VERSION = "3.11"
+  # Set NODE_ENV to production
+  NODE_ENV = "production"
+
+# Ignore Python files and backend directory
+[build.ignore]
+  ignore = "backend/*"
 
 # Redirect rules for SPA routing
 [[redirects]]
