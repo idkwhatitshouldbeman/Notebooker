@@ -52,43 +52,13 @@ Submit a new agentic task for processing.
 
 ## Deployment
 
-This service can be deployed on multiple platforms:
-
-### Netlify (Full-Stack)
-- **Frontend**: React + Vite application
-- **Backend**: Python FastAPI with Netlify Functions
-- **Configuration**: `netlify.toml` included
-- **Build**: `npm install && npm run build && pip install -r requirements.txt`
-
-### Render (Backend Only)
-- **Backend**: Python FastAPI service
-- **Configuration**: `render.yaml` included
-- **Build**: `pip install -r requirements.txt`
-
-### Local Development
-```bash
-# Backend only
-pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000
-
-# Full-stack development
-npm install
-npm run dev  # Frontend on :3000, proxies API to :8000
-```
+This service is designed to be deployed on Render with automatic scaling and health monitoring.
 
 ## Development
 
-### Backend Only
 1. Install dependencies: `pip install -r requirements.txt`
 2. Run locally: `uvicorn main:app --host 0.0.0.0 --port 8000`
 3. Test API: `curl -X POST http://localhost:8000/agentic-task -H "Content-Type: application/json" -d @example_request.json`
-
-### Full-Stack Development
-1. Install backend dependencies: `pip install -r requirements.txt`
-2. Install frontend dependencies: `npm install`
-3. Start backend: `uvicorn main:app --host 0.0.0.0 --port 8000`
-4. Start frontend: `npm run dev` (runs on http://localhost:3000)
-5. Access the web interface at http://localhost:3000
 
 ## Architecture
 
