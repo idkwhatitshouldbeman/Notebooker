@@ -7,6 +7,9 @@
   
   # Functions directory for serverless functions
   functions = "netlify/functions"
+  
+  # Ignore Python files and backend directory
+  ignore = "backend/*"
 
 [build.environment]
   # Node.js version
@@ -14,10 +17,6 @@
   
   # Set NODE_ENV to production
   NODE_ENV = "production"
-
-# Ignore Python files and backend directory
-[build.ignore]
-  ignore = "backend/*"
 
 # Redirect rules for SPA routing
 [[redirects]]
