@@ -16,7 +16,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false, // Disable sourcemaps for production
     rollupOptions: {
       output: {
         manualChunks: {
@@ -28,5 +28,11 @@ export default defineConfig({
   },
   define: {
     'process.env': {}
+  },
+  // Ensure proper base path for Netlify
+  base: '/',
+  // Optimize for production
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'axios']
   }
 })

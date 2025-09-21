@@ -1,0 +1,8 @@
+# Minimal requirements for Netlify Functions
+# Only include what's actually needed for the serverless function
+
+# No heavy dependencies like torch, transformers, etc.
+# Netlify Functions have size and time limits
+
+# Basic Python standard library is sufficient for our mock implementation
+# The function only uses: json, os, datetime (all built-in)

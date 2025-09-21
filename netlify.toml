@@ -1,6 +1,6 @@
 [build]
-  # Build both frontend and backend
-  command = "npm install && npm run build && pip install -r requirements.txt"
+  # Build frontend only (Netlify Functions don't need pip install)
+  command = "npm install && npm run build"
   functions = "netlify/functions"
   publish = "dist"
 
@@ -8,10 +8,15 @@
   PYTHON_VERSION = "3.11"
   NODE_VERSION = "18"
 
-# Redirect all API calls to Netlify Functions
+# Redirect API calls to Netlify Functions
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from = "/api/agentic-task"
+  to = "/.netlify/functions/agentic-task"
+  status = 200
+
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
   status = 200
 
 # Redirect root to a simple HTML page
