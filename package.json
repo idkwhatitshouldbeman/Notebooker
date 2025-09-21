@@ -2,6 +2,7 @@
   "name": "notebooker-frontend",
   "version": "1.0.0",
   "description": "Notebooker Frontend - Engineering Notebook Platform",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
