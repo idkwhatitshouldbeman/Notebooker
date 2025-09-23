@@ -28,25 +28,57 @@ const Dashboard: React.FC = () => {
 
   // Load projects from backend
   useEffect(() => {
+    console.log('🏠 Dashboard component mounted');
+    console.log('🔍 Checking authentication status...');
+    
+    const authToken = localStorage.getItem('authToken');
+    const username = localStorage.getItem('username');
+    const authTimestamp = localStorage.getItem('authTimestamp');
+    
+    console.log('🔐 Auth status:', {
+      hasToken: !!authToken,
+      username: username,
+      authTimestamp: authTimestamp ? new Date(parseInt(authTimestamp)).toISOString() : null,
+      tokenPreview: authToken ? authToken.substring(0, 20) + '...' : null
+    });
+
+    if (!authToken) {
+      console.warn('⚠️ No auth token found, redirecting to login');
+      navigate('/');
+      return;
+    }
+
     loadProjects();
   }, []);
 
   const loadProjects = async () => {
+    console.log('📂 Loading projects...');
     try {
+      console.log('🌐 Attempting to fetch projects from API...');
       const response = await axios.get('/api/projects');
+      console.log('✅ API response received:', response.data);
+      
       if (response.data.success) {
+        console.log('📋 Projects loaded from API:', response.data.projects?.length || 0);
         setProjects(response.data.projects || []);
       } else {
-        // Fallback to sample data if backend is not available
+        console.warn('⚠️ API returned unsuccessful response, using sample data');
         setProjects(getSampleProjects());
       }
-    } catch (error) {
-      console.error('Error loading projects:', error);
-      // Use sample data as fallback
+    } catch (error: any) {
+      console.error('❌ Error loading projects from API:', {
+        error: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url
+      });
+      
+      console.log('🔄 Falling back to sample data...');
       setProjects(getSampleProjects());
       toast.error('Using offline mode - some features may be limited');
     } finally {
       setLoading(false);
+      console.log('🏁 Project loading completed');
     }
   };
 
@@ -129,9 +161,23 @@ const Dashboard: React.FC = () => {
   };
 
   const handleLogout = () => {
+    console.log('🚪 User signing out...');
+    
+    const authToken = localStorage.getItem('authToken');
+    const username = localStorage.getItem('username');
+    
+    console.log('🔐 Clearing auth data:', {
+      hadToken: !!authToken,
+      username: username
+    });
+    
     localStorage.removeItem('authToken');
-    navigate('/');
+    localStorage.removeItem('username');
+    localStorage.removeItem('authTimestamp');
+    
+    console.log('✅ Auth data cleared, redirecting to login');
     toast.success('Logged out successfully');
+    navigate('/');
   };
 
   const StatIcon: React.FC<{ type: 'started' | 'inProgress' | 'finished' }> = ({ type }) => {
