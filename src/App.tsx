@@ -1,50 +1,47 @@
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from 'react-query'
-import 'bootstrap/dist/css/bootstrap.min.css'
-import './App.css'
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import SignIn from "./pages/SignIn";
+import Dashboard from "./pages/Dashboard";
+import Project from "./pages/Project";
+import Settings from "./pages/Settings";
+import NotFound from "./pages/NotFound";
 
-// Components
-import Navbar from './components/Navbar'
-import Dashboard from './pages/Dashboard'
-import AuthPage from './pages/AuthPage'
-import ProjectWorkspace from './pages/ProjectWorkspace'
-import Sections from './pages/Sections'
-import Analyze from './pages/Analyze'
-import Draft from './pages/Draft'
-import Rewrite from './pages/Rewrite'
-import ViewSection from './pages/ViewSection'
-import Planning from './pages/Planning'
-import Settings from './pages/Settings'
-import Backup from './pages/Backup'
+// Import Notebooker pages
+import Analyze from "./pages/Analyze";
+import Draft from "./pages/Draft";
+import Rewrite from "./pages/Rewrite";
+import Planning from "./pages/Planning";
+import ViewSection from "./pages/ViewSection";
+import Backup from "./pages/Backup";
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="App">
-          <Navbar />
-          <main className="notebooker-container">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/project/:id" element={<ProjectWorkspace />} />
-              <Route path="/project/:id/sections" element={<Sections />} />
-              <Route path="/project/:id/analyze" element={<Analyze />} />
-              <Route path="/project/:id/draft" element={<Draft />} />
-              <Route path="/project/:id/rewrite" element={<Rewrite />} />
-              <Route path="/project/:id/planning" element={<Planning />} />
-              <Route path="/section/:id" element={<ViewSection />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/backup" element={<Backup />} />
-            </Routes>
-          </main>
-        </div>
-      </Router>
-    </QueryClientProvider>
-  )
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<SignIn />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/project/:id" element={<Project />} />
+          <Route path="/project/:id/analyze" element={<Analyze />} />
+          <Route path="/project/:id/draft" element={<Draft />} />
+          <Route path="/project/:id/rewrite" element={<Rewrite />} />
+          <Route path="/project/:id/planning" element={<Planning />} />
+          <Route path="/section/:id" element={<ViewSection />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/backup" element={<Backup />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
-export default App
+export default App;

@@ -1,120 +1,338 @@
-import React from 'react'
-import { Container, Row, Col, Card, Button } from 'react-bootstrap'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Plus, Pencil, Clock, CheckCircle, MoreVertical, Settings, LogOut, BookOpen, Brain, FileText } from 'lucide-react';
+import { toast } from 'sonner';
+import axios from 'axios';
 
-const Dashboard: React.FC = () => {
-  return (
-    <Container className="py-4">
-      <Row>
-        <Col>
-          <h1 className="mb-4">📓 Notebooker Dashboard</h1>
-          <p className="lead">Your Engineering Notebook Platform</p>
-        </Col>
-      </Row>
-      
-      <Row className="g-4">
-        <Col md={6} lg={4}>
-          <Card className="h-100 section-card">
-            <Card.Body>
-              <Card.Title>🚀 Create New Project</Card.Title>
-              <Card.Text>
-                Start a new engineering project and begin documenting your work.
-              </Card.Text>
-              <Button as={Link} to="/project/new" variant="primary">
-                New Project
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col md={6} lg={4}>
-          <Card className="h-100 section-card">
-            <Card.Body>
-              <Card.Title>📊 AI Analysis</Card.Title>
-              <Card.Text>
-                Analyze your project content with AI-powered insights and suggestions.
-              </Card.Text>
-              <Button as={Link} to="/project/1/analyze" variant="success">
-                Analyze Project
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col md={6} lg={4}>
-          <Card className="h-100 section-card">
-            <Card.Body>
-              <Card.Title>✍️ AI Drafting</Card.Title>
-              <Card.Text>
-                Use AI to help draft new content for your engineering notebook.
-              </Card.Text>
-              <Button as={Link} to="/project/1/draft" variant="info">
-                Start Drafting
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col md={6} lg={4}>
-          <Card className="h-100 section-card">
-            <Card.Body>
-              <Card.Title>🔄 AI Rewrite</Card.Title>
-              <Card.Text>
-                Improve existing content with AI-powered rewriting and editing.
-              </Card.Text>
-              <Button as={Link} to="/project/1/rewrite" variant="warning">
-                Rewrite Content
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col md={6} lg={4}>
-          <Card className="h-100 section-card">
-            <Card.Body>
-              <Card.Title>📋 Project Planning</Card.Title>
-              <Card.Text>
-                Plan your project structure and organize your engineering workflow.
-              </Card.Text>
-              <Button as={Link} to="/project/1/planning" variant="secondary">
-                Plan Project
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col md={6} lg={4}>
-          <Card className="h-100 section-card">
-            <Card.Body>
-              <Card.Title>💾 Backup & Restore</Card.Title>
-              <Card.Text>
-                Backup your work and restore from previous versions.
-              </Card.Text>
-              <Button as={Link} to="/backup" variant="outline-primary">
-                Manage Backups
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      
-      <Row className="mt-5">
-        <Col>
-          <Card>
-            <Card.Header>
-              <h5>🎯 Recent Projects</h5>
-            </Card.Header>
-            <Card.Body>
-              <p className="text-muted">No recent projects found. Create your first project to get started!</p>
-              <Button as={Link} to="/project/new" variant="primary">
-                Create Your First Project
-              </Button>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
-  )
+interface ProjectStats {
+  started: number;
+  inProgress: number;
+  finished: number;
 }
 
-export default Dashboard
+interface Project {
+  id: string;
+  title: string;
+  summary: string;
+  stats: ProjectStats;
+  lastModified: string;
+  status: 'active' | 'archived' | 'draft';
+}
+
+const Dashboard: React.FC = () => {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newProject, setNewProject] = useState({ title: '', summary: '' });
+  const navigate = useNavigate();
+
+  // Load projects from backend
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    try {
+      const response = await axios.get('/api/projects');
+      if (response.data.success) {
+        setProjects(response.data.projects || []);
+      } else {
+        // Fallback to sample data if backend is not available
+        setProjects(getSampleProjects());
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      // Use sample data as fallback
+      setProjects(getSampleProjects());
+      toast.error('Using offline mode - some features may be limited');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSampleProjects = (): Project[] => [
+    {
+      id: '1',
+      title: 'Robotics Control System',
+      summary: 'Advanced control algorithms for autonomous robot navigation and manipulation.',
+      stats: { started: 5, inProgress: 2, finished: 8 },
+      lastModified: '2 days ago',
+      status: 'active'
+    },
+    {
+      id: '2', 
+      title: 'Machine Learning Pipeline',
+      summary: 'End-to-end ML pipeline for predictive maintenance in industrial equipment.',
+      stats: { started: 3, inProgress: 1, finished: 2 },
+      lastModified: '1 week ago',
+      status: 'active'
+    },
+    {
+      id: '3',
+      title: 'IoT Sensor Network',
+      summary: 'Distributed sensor network for environmental monitoring and data collection.',
+      stats: { started: 8, inProgress: 3, finished: 12 },
+      lastModified: '3 days ago',
+      status: 'active'
+    },
+    {
+      id: '4',
+      title: 'Computer Vision System',
+      summary: 'Real-time object detection and tracking for surveillance applications.',
+      stats: { started: 2, inProgress: 1, finished: 5 },
+      lastModified: '5 days ago',
+      status: 'active'
+    },
+    {
+      id: '5',
+      title: 'Blockchain Integration',
+      summary: 'Secure blockchain implementation for supply chain traceability.',
+      stats: { started: 12, inProgress: 4, finished: 20 },
+      lastModified: '1 day ago',
+      status: 'active'
+    },
+    {
+      id: '6',
+      title: 'Quantum Computing Research',
+      summary: 'Research and development of quantum algorithms for optimization problems.',
+      stats: { started: 1, inProgress: 2, finished: 1 },
+      lastModified: '1 week ago',
+      status: 'active'
+    }
+  ];
+
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProject.title.trim()) {
+      toast.error('Project title is required');
+      return;
+    }
+
+    try {
+      const response = await axios.post('/api/projects', {
+        title: newProject.title,
+        summary: newProject.summary
+      });
+
+      if (response.data.success) {
+        toast.success('Project created successfully!');
+        setNewProject({ title: '', summary: '' });
+        setShowCreateModal(false);
+        loadProjects();
+      } else {
+        toast.error('Failed to create project');
+      }
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast.error('Failed to create project. Please try again.');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    navigate('/');
+    toast.success('Logged out successfully');
+  };
+
+  const StatIcon: React.FC<{ type: 'started' | 'inProgress' | 'finished' }> = ({ type }) => {
+    switch (type) {
+      case 'started':
+        return <Pencil className="w-4 h-4 text-warning" />;
+      case 'inProgress':
+        return <Clock className="w-4 h-4 text-primary" />;
+      case 'finished':
+        return <CheckCircle className="w-4 h-4 text-success" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="cosmic-bg min-h-screen flex items-center justify-center">
+        <div className="text-cosmic-white text-xl">Loading your projects...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="cosmic-bg min-h-screen">
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-cosmic-white tracking-wider">
+              NOTEBOOKR
+            </h1>
+            <div className="flex items-center space-x-4">
+              <Link 
+                to="/settings"
+                className="text-cosmic-bright hover:text-cosmic-white transition-colors flex items-center space-x-2"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Settings</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-cosmic-bright hover:text-cosmic-white transition-colors flex items-center space-x-2 text-sm"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-semibold text-cosmic-white mb-2">
+              Your Engineering Projects
+            </h2>
+            <p className="text-cosmic-bright">
+              Continue your engineering journey or start something new
+            </p>
+          </div>
+          <div className="flex space-x-4">
+            <Link
+              to="/backup"
+              className="cosmic-button flex items-center space-x-2"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Backup</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Projects Grid */}
+        <div className="project-grid">
+          {/* Add New Project Card */}
+          <div 
+            className="cosmic-card p-6 border-2 border-dashed border-input-border hover:border-primary transition-colors cursor-pointer group"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <div className="flex flex-col items-center justify-center h-48 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                <Plus className="w-6 h-6 text-primary" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-medium text-cosmic-white mb-1">
+                  New Project
+                </h3>
+                <p className="text-cosmic-bright text-sm">
+                  Start your next engineering adventure
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Existing Projects */}
+          {projects.map((project) => (
+            <Link key={project.id} to={`/project/${project.id}`}>
+              <div className="cosmic-card p-6 h-full cursor-pointer group">
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-xl font-semibold text-cosmic-white group-hover:text-primary transition-colors line-clamp-2">
+                    {project.title}
+                  </h3>
+                  <button className="text-cosmic-bright hover:text-cosmic-white transition-colors">
+                    <MoreVertical className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <p className="text-cosmic-bright text-sm mb-6 line-clamp-3">
+                  {project.summary}
+                </p>
+
+                {/* Stats */}
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-2">
+                      <StatIcon type="started" />
+                      <span className="text-cosmic-bright">Started:</span>
+                    </div>
+                    <span className="text-cosmic-white font-medium">{project.stats.started}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-2">
+                      <StatIcon type="inProgress" />
+                      <span className="text-cosmic-bright">In Progress:</span>
+                    </div>
+                    <span className="text-cosmic-white font-medium">{project.stats.inProgress}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-2">
+                      <StatIcon type="finished" />
+                      <span className="text-cosmic-bright">Finished:</span>
+                    </div>
+                    <span className="text-cosmic-white font-medium">{project.stats.finished}</span>
+                  </div>
+                </div>
+
+                {/* Last Modified */}
+                <div className="pt-4 border-t border-border">
+                  <p className="text-cosmic-bright text-xs">
+                    Last modified {project.lastModified}
+                  </p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </main>
+
+      {/* Create Project Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="cosmic-card p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-cosmic-white mb-4">Create New Project</h3>
+            <form onSubmit={handleCreateProject} className="space-y-4">
+              <div>
+                <label className="text-cosmic-white text-sm font-medium block mb-2">
+                  Project Title
+                </label>
+                <input
+                  type="text"
+                  value={newProject.title}
+                  onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
+                  className="cosmic-input w-full"
+                  placeholder="Enter project title"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-cosmic-white text-sm font-medium block mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={newProject.summary}
+                  onChange={(e) => setNewProject({ ...newProject, summary: e.target.value })}
+                  className="cosmic-input w-full h-20 resize-none"
+                  placeholder="Enter project description"
+                />
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  type="submit"
+                  className="cosmic-button flex-1"
+                >
+                  Create Project
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-cosmic-bright hover:text-cosmic-white transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Dashboard;
