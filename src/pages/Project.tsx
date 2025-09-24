@@ -190,23 +190,26 @@ const Project: React.FC = () => {
 
   const handleSectionAction = (sectionId: string, action: 'edit' | 'delete' | 'lock') => {
     const section = project?.sections.find(s => s.id === sectionId);
-    if (!section) return;
+    if (!section || !project) return;
 
     switch (action) {
       case 'edit':
+        // For now, just show a message - could open an edit modal later
         toast.info('Edit functionality coming soon!');
         break;
       case 'delete':
+        // Actually delete the section from the project
+        const updatedSections = project.sections.filter(s => s.id !== sectionId);
+        setProject({ ...project, sections: updatedSections });
         toast.success('Section deleted successfully!');
         break;
       case 'lock':
-        if (project) {
-          const updatedSections = project.sections.map(s => 
-            s.id === sectionId ? { ...s, isLocked: !s.isLocked } : s
-          );
-          setProject({ ...project, sections: updatedSections });
-          toast.success(section.isLocked ? 'Section unlocked' : 'Section locked');
-        }
+        // Toggle lock status
+        const lockedSections = project.sections.map(s => 
+          s.id === sectionId ? { ...s, isLocked: !s.isLocked } : s
+        );
+        setProject({ ...project, sections: lockedSections });
+        toast.success(section.isLocked ? 'Section unlocked' : 'Section locked');
         break;
     }
     setShowSectionMenu(null);
@@ -411,44 +414,41 @@ const Project: React.FC = () => {
             </div>
             
             {project.sections.map((section) => (
-              <div key={section.id} className="cosmic-card p-6 group">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className="text-lg">{getStatusIcon(section.status)}</span>
-                      <h3 className="text-lg font-semibold text-cosmic-white">
+              <div key={section.id} className="cosmic-card p-4 group">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-sm">{getStatusIcon(section.status)}</span>
+                      <h3 className="text-base font-semibold text-cosmic-white truncate">
                         {section.title}
                       </h3>
-                      <span className={`text-sm font-medium ${getStatusColor(section.status)}`}>
+                      <span className={`text-xs font-medium ${getStatusColor(section.status)}`}>
                         {section.status.replace('-', ' ').toUpperCase()}
                       </span>
                       {section.isLocked && (
-                        <span className="text-success text-sm font-medium flex items-center space-x-1">
+                        <span className="text-success text-xs font-medium flex items-center space-x-1">
                           <Lock className="w-3 h-3" />
                           <span>LOCKED</span>
                         </span>
                       )}
                     </div>
-                    <p className="text-cosmic-bright text-sm line-clamp-2 mb-3">
-                      {section.content}
-                    </p>
-                    <div className="flex items-center space-x-4 text-xs text-cosmic-bright">
+                    <div className="flex items-center space-x-3 text-xs text-cosmic-bright">
                       <div className="flex items-center space-x-1">
                         <FileText className="w-3 h-3" />
                         <span>{section.wordCount} words</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Calendar className="w-3 h-3" />
-                        <span>Modified {section.lastModified}</span>
+                        <span>{section.lastModified}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="relative">
+                  <div className="relative ml-2">
                     <button 
                       onClick={() => setShowSectionMenu(showSectionMenu === section.id ? null : section.id)}
-                      className="text-cosmic-bright hover:text-cosmic-white transition-colors"
+                      className="text-cosmic-bright hover:text-cosmic-white transition-colors p-1"
                     >
-                      <MoreVertical className="w-5 h-5" />
+                      <MoreVertical className="w-4 h-4" />
                     </button>
                     
                     {/* Section Menu */}
