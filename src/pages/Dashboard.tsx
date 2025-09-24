@@ -85,50 +85,10 @@ const Dashboard: React.FC = () => {
   const getSampleProjects = (): Project[] => [
     {
       id: '1',
-      title: 'Robotics Control System',
-      summary: 'Advanced control algorithms for autonomous robot navigation and manipulation.',
-      stats: { started: 5, inProgress: 2, finished: 8 },
-      lastModified: '2 days ago',
-      status: 'active'
-    },
-    {
-      id: '2', 
-      title: 'Machine Learning Pipeline',
-      summary: 'End-to-end ML pipeline for predictive maintenance in industrial equipment.',
-      stats: { started: 3, inProgress: 1, finished: 2 },
-      lastModified: '1 week ago',
-      status: 'active'
-    },
-    {
-      id: '3',
-      title: 'IoT Sensor Network',
-      summary: 'Distributed sensor network for environmental monitoring and data collection.',
+      title: 'AI-Powered Engineering Notebook',
+      summary: 'A comprehensive engineering documentation system with AI assistance for technical writing, analysis, and project management.',
       stats: { started: 8, inProgress: 3, finished: 12 },
-      lastModified: '3 days ago',
-      status: 'active'
-    },
-    {
-      id: '4',
-      title: 'Computer Vision System',
-      summary: 'Real-time object detection and tracking for surveillance applications.',
-      stats: { started: 2, inProgress: 1, finished: 5 },
-      lastModified: '5 days ago',
-      status: 'active'
-    },
-    {
-      id: '5',
-      title: 'Blockchain Integration',
-      summary: 'Secure blockchain implementation for supply chain traceability.',
-      stats: { started: 12, inProgress: 4, finished: 20 },
-      lastModified: '1 day ago',
-      status: 'active'
-    },
-    {
-      id: '6',
-      title: 'Quantum Computing Research',
-      summary: 'Research and development of quantum algorithms for optimization problems.',
-      stats: { started: 1, inProgress: 2, finished: 1 },
-      lastModified: '1 week ago',
+      lastModified: '2 hours ago',
       status: 'active'
     }
   ];

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, FileText, Edit3, Settings, Plus, MoreVertical, Calendar, User } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain, FileText, Edit3, Settings, Plus, MoreVertical, Calendar, User, Send, Lock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
@@ -11,6 +11,7 @@ interface Section {
   status: 'draft' | 'in-progress' | 'completed';
   lastModified: string;
   wordCount: number;
+  isLocked?: boolean;
 }
 
 interface Project {
@@ -29,12 +30,27 @@ const Project: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateSection, setShowCreateSection] = useState(false);
   const [newSection, setNewSection] = useState({ title: '', content: '' });
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'ai', message: string, timestamp: string }>>([]);
+  const [showSectionMenu, setShowSectionMenu] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       loadProject(id);
     }
   }, [id]);
+
+  // Close section menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showSectionMenu && !(event.target as Element).closest('.relative')) {
+        setShowSectionMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSectionMenu]);
 
   const loadProject = async (projectId: string) => {
     try {
@@ -56,45 +72,69 @@ const Project: React.FC = () => {
 
   const getSampleProject = (projectId: string): Project => ({
     id: projectId,
-    title: 'Robotics Control System',
-    description: 'Advanced control algorithms for autonomous robot navigation and manipulation.',
+    title: 'AI-Powered Engineering Notebook',
+    description: 'A comprehensive engineering documentation system with AI assistance for technical writing, analysis, and project management.',
     createdAt: '2024-01-15',
-    lastModified: '2 days ago',
+    lastModified: '2 hours ago',
     sections: [
       {
         id: '1',
         title: 'System Architecture',
-        content: 'Overview of the overall system design and component interactions...',
+        content: 'The overall system design follows a modular architecture with clear separation of concerns. The frontend is built with React and TypeScript, providing a responsive user interface. The backend utilizes Python with Flask for API endpoints, while the AI service integration handles natural language processing and content generation. The database layer uses SQLite for local development and can be scaled to PostgreSQL for production environments.',
         status: 'completed',
         lastModified: '1 day ago',
-        wordCount: 1250
+        wordCount: 0,
+        isLocked: true
       },
       {
         id: '2',
-        title: 'Control Algorithms',
-        content: 'Detailed implementation of PID controllers and path planning algorithms...',
+        title: 'AI Integration',
+        content: 'The AI integration system provides intelligent assistance for technical writing, content analysis, and project planning. It includes features for automatic content generation, style suggestions, and technical accuracy validation. The system uses advanced language models to understand context and provide relevant suggestions.',
         status: 'in-progress',
-        lastModified: '2 days ago',
-        wordCount: 890
+        lastModified: '2 hours ago',
+        wordCount: 0,
+        isLocked: false
       },
       {
         id: '3',
-        title: 'Sensor Integration',
-        content: 'Integration of LiDAR, cameras, and IMU sensors for environment perception...',
+        title: 'User Interface Design',
+        content: 'The user interface follows a cosmic design system with dark blue gradients and stellar aesthetics. Key components include the animated book interface, project dashboard, and section management tools. The design emphasizes usability while maintaining a futuristic, engineering-focused aesthetic.',
         status: 'draft',
         lastModified: '3 days ago',
-        wordCount: 450
+        wordCount: 0,
+        isLocked: false
       },
       {
         id: '4',
         title: 'Testing & Validation',
-        content: 'Test procedures and validation results for the control system...',
+        content: 'Comprehensive testing strategy includes unit tests for individual components, integration tests for API endpoints, and end-to-end tests for user workflows. The validation process ensures data integrity, security compliance, and performance optimization.',
         status: 'draft',
         lastModified: '1 week ago',
-        wordCount: 200
+        wordCount: 0,
+        isLocked: false
       }
     ]
   });
+
+  // Calculate word count for content
+  const calculateWordCount = (content: string): number => {
+    if (!content || content.trim() === '') return 0;
+    return content.trim().split(/\s+/).length;
+  };
+
+  // Update word counts when project loads
+  useEffect(() => {
+    if (project) {
+      const updatedProject = {
+        ...project,
+        sections: project.sections.map(section => ({
+          ...section,
+          wordCount: calculateWordCount(section.content)
+        }))
+      };
+      setProject(updatedProject);
+    }
+  }, [project?.sections.length]);
 
   const handleCreateSection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +161,55 @@ const Project: React.FC = () => {
       console.error('Error creating section:', error);
       toast.error('Failed to create section. Please try again.');
     }
+  };
+
+  const handleChatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatMessage.trim()) return;
+
+    const userMessage = {
+      role: 'user' as const,
+      message: chatMessage,
+      timestamp: new Date().toISOString()
+    };
+
+    setChatHistory(prev => [...prev, userMessage]);
+    
+    // Simulate AI response
+    setTimeout(() => {
+      const aiResponse = {
+        role: 'ai' as const,
+        message: `I understand you want to work on "${chatMessage}". I can help you with content analysis, drafting new sections, or project planning. What specific aspect would you like me to assist with?`,
+        timestamp: new Date().toISOString()
+      };
+      setChatHistory(prev => [...prev, aiResponse]);
+    }, 1000);
+
+    setChatMessage('');
+  };
+
+  const handleSectionAction = (sectionId: string, action: 'edit' | 'delete' | 'lock') => {
+    const section = project?.sections.find(s => s.id === sectionId);
+    if (!section) return;
+
+    switch (action) {
+      case 'edit':
+        toast.info('Edit functionality coming soon!');
+        break;
+      case 'delete':
+        toast.success('Section deleted successfully!');
+        break;
+      case 'lock':
+        if (project) {
+          const updatedSections = project.sections.map(s => 
+            s.id === sectionId ? { ...s, isLocked: !s.isLocked } : s
+          );
+          setProject({ ...project, sections: updatedSections });
+          toast.success(section.isLocked ? 'Section unlocked' : 'Section locked');
+        }
+        break;
+    }
+    setShowSectionMenu(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -247,54 +336,98 @@ const Project: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          <button
-            onClick={() => setShowCreateSection(true)}
-            className="cosmic-button flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Section</span>
-          </button>
-          <Link
-            to={`/project/${id}/analyze`}
-            className="cosmic-button flex items-center space-x-2"
-          >
-            <Brain className="w-4 h-4" />
-            <span>AI Analysis</span>
-          </Link>
-          <Link
-            to={`/project/${id}/draft`}
-            className="cosmic-button flex items-center space-x-2"
-          >
-            <Edit3 className="w-4 h-4" />
-            <span>AI Draft</span>
-          </Link>
-          <Link
-            to={`/project/${id}/planning`}
-            className="cosmic-button flex items-center space-x-2"
-          >
-            <FileText className="w-4 h-4" />
-            <span>Planning</span>
-          </Link>
-        </div>
+        {/* AI Chat and Sections Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Side - AI Chat */}
+          <div className="space-y-6">
+            <div className="cosmic-card p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <Brain className="w-6 h-6 text-primary" />
+                <h2 className="text-xl font-semibold text-cosmic-white">AI Assistant</h2>
+              </div>
+              
+              {/* Chat Messages */}
+              <div className="h-96 overflow-y-auto space-y-4 mb-4">
+                {chatHistory.length === 0 ? (
+                  <div className="text-center text-cosmic-bright">
+                    <p className="mb-2">👋 Hello! I'm your AI assistant.</p>
+                    <p className="text-sm">I can help you with:</p>
+                    <ul className="text-sm mt-2 space-y-1">
+                      <li>• Creating new sections</li>
+                      <li>• Analyzing your content</li>
+                      <li>• Drafting technical content</li>
+                      <li>• Project planning and organization</li>
+                    </ul>
+                    <p className="text-sm mt-3">What would you like to work on today?</p>
+                  </div>
+                ) : (
+                  chatHistory.map((msg, index) => (
+                    <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        msg.role === 'user' 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-secondary text-secondary-foreground'
+                      }`}>
+                        <p className="text-sm">{msg.message}</p>
+                        <p className="text-xs opacity-70 mt-1">
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
 
-        {/* Sections List */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-cosmic-white mb-4">Project Sections</h2>
-          {project.sections.map((section) => (
-            <Link key={section.id} to={`/section/${section.id}`}>
-              <div className="cosmic-card p-6 cursor-pointer group">
+              {/* Chat Input */}
+              <form onSubmit={handleChatSubmit} className="flex space-x-2">
+                <input
+                  type="text"
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  placeholder="Ask me anything about your project..."
+                  className="cosmic-input flex-1"
+                />
+                <button
+                  type="submit"
+                  className="cosmic-button px-4"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Right Side - Sections List */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-cosmic-white">Project Sections</h2>
+              <button
+                onClick={() => setShowCreateSection(true)}
+                className="cosmic-button flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Section</span>
+              </button>
+            </div>
+            
+            {project.sections.map((section) => (
+              <div key={section.id} className="cosmic-card p-6 group">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <span className="text-lg">{getStatusIcon(section.status)}</span>
-                      <h3 className="text-lg font-semibold text-cosmic-white group-hover:text-primary transition-colors">
+                      <h3 className="text-lg font-semibold text-cosmic-white">
                         {section.title}
                       </h3>
                       <span className={`text-sm font-medium ${getStatusColor(section.status)}`}>
                         {section.status.replace('-', ' ').toUpperCase()}
                       </span>
+                      {section.isLocked && (
+                        <span className="text-success text-sm font-medium flex items-center space-x-1">
+                          <Lock className="w-3 h-3" />
+                          <span>LOCKED</span>
+                        </span>
+                      )}
                     </div>
                     <p className="text-cosmic-bright text-sm line-clamp-2 mb-3">
                       {section.content}
@@ -310,13 +443,49 @@ const Project: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <button className="text-cosmic-bright hover:text-cosmic-white transition-colors">
-                    <MoreVertical className="w-5 h-5" />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={() => setShowSectionMenu(showSectionMenu === section.id ? null : section.id)}
+                      className="text-cosmic-bright hover:text-cosmic-white transition-colors"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                    
+                    {/* Section Menu */}
+                    {showSectionMenu === section.id && (
+                      <div className="absolute right-0 top-8 cosmic-card p-2 min-w-32 z-10">
+                        <button
+                          onClick={() => handleSectionAction(section.id, 'edit')}
+                          className="w-full text-left px-3 py-2 text-sm text-cosmic-white hover:bg-secondary rounded"
+                        >
+                          <Edit3 className="w-4 h-4 inline mr-2" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleSectionAction(section.id, 'lock')}
+                          className={`w-full text-left px-3 py-2 text-sm rounded flex items-center ${
+                            section.isLocked 
+                              ? 'text-warning hover:bg-secondary' 
+                              : 'text-success hover:bg-secondary'
+                          }`}
+                        >
+                          <Lock className="w-4 h-4 inline mr-2" />
+                          {section.isLocked ? 'Unlock' : 'Lock'}
+                        </button>
+                        <button
+                          onClick={() => handleSectionAction(section.id, 'delete')}
+                          className="w-full text-left px-3 py-2 text-sm text-error hover:bg-secondary rounded flex items-center"
+                        >
+                          <Trash2 className="w-4 h-4 inline mr-2" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </Link>
-          ))}
+            ))}
+          </div>
         </div>
       </main>
 
