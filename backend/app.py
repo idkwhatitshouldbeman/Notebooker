@@ -3,11 +3,14 @@ Flask Web Interface for Agentic Engineering Notebook Writer
 """
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session, make_response, send_file
+from flask_cors import CORS
 import os
 import json
 from datetime import datetime
 from pathlib import Path
 import logging
+import hashlib
+import secrets
 
 from en_writer import ENWriter
 from database_manager import SmartNotebookerDB
@@ -28,6 +31,23 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change this in production
 
+# Configure CORS - More permissive for immediate testing
+CORS(app, 
+     origins=[
+         "https://notebooker.netlify.app",
+         "http://localhost:8080",
+         "http://localhost:3000",
+         "http://127.0.0.1:8080",
+         "http://127.0.0.1:3000",
+         "https://*.netlify.app"  # Allow all Netlify subdomains
+     ],
+     allow_headers=["Content-Type", "X-API-Key", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
+
+# API Key for authentication
+API_KEY = os.environ.get('API_KEY', 'notebooker-api-key-2024')
+
 # Enable template auto-reload in debug mode
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
@@ -40,6 +60,13 @@ app.jinja_env.auto_reload = True
 def add_header(response):
     if 'no-cache' not in request.headers.get('Cache-Control', ''):
         response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    
+    # Additional CORS headers for immediate fix
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, X-API-Key, Authorization'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    
     return response
 
 # Initialize livereload for development
@@ -74,6 +101,17 @@ def require_auth(f):
     def decorated_function(*args, **kwargs):
         # Check for session token in localStorage (handled by JavaScript)
         # For now, we'll allow access and handle auth in the frontend
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
+def require_api_key(f):
+    """Decorator to require API key authentication"""
+    def decorated_function(*args, **kwargs):
+        api_key = request.headers.get('X-API-Key')
+        if not api_key or api_key != API_KEY:
+            logger.warning(f"Invalid API key attempt from {request.remote_addr}")
+            return jsonify({'success': False, 'error': 'Invalid API key'}), 401
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
@@ -199,6 +237,11 @@ def logout():
     except Exception as e:
         logger.error(f"Logout error: {e}")
         return jsonify({'success': False, 'error': 'Logout failed'})
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint for monitoring"""
+    return {"status": "healthy", "service": "NTBK_AI Flask API", "timestamp": datetime.now().isoformat()}, 200
 
 @app.route('/')
 def index():
@@ -792,6 +835,311 @@ def ai_service_health():
     except Exception as e:
         logger.error(f"Error checking AI service health: {e}")
         return jsonify({'error': str(e)}), 500
+
+# New API endpoints for frontend integration
+@app.route('/api/ai/chat', methods=['POST'])
+@require_api_key
+def ai_chat():
+    """AI chat endpoint for conversational assistance"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
+        
+        message = data.get('message', '')
+        project_id = data.get('projectId', '')
+        context = data.get('context', '')
+        
+        if not message:
+            return jsonify({'success': False, 'error': 'Message is required'}), 400
+        
+        logger.info(f"AI Chat request - Project: {project_id}, Message: {message[:100]}...")
+        
+        # Create prompt context for AI service
+        prompt_context = f"""
+        As an engineering notebook assistant, help with the following request:
+        
+        User Message: {message}
+        Project Context: {context}
+        Project ID: {project_id}
+        
+        Provide helpful, technical assistance for engineering documentation and project management.
+        Be specific and actionable in your response.
+        """
+        
+        # Use AI service to generate response
+        ai_client = get_ai_client()
+        task_manager = get_task_manager()
+        
+        from ai_service_client import AgentConfig
+        agent_config = AgentConfig(
+            model="flan-t5-small",
+            temperature=0.7,
+            max_tokens=1000
+        )
+        
+        task_id = task_manager.start_task(prompt_context, agent_config)
+        response = ai_client.poll_task_completion(task_id, max_wait_time=60)
+        
+        if response.status == "completed" and response.agent_reply:
+            # Generate suggestions based on the response
+            suggestions = [
+                "Add technical details",
+                "Include implementation steps", 
+                "Document testing procedures",
+                "Create project timeline"
+            ]
+            
+            return jsonify({
+                'success': True,
+                'response': response.agent_reply,
+                'suggestions': suggestions
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'AI service error: {response.error or "Unknown error"}'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error in AI chat: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+@app.route('/api/ai/analyze', methods=['POST'])
+@require_api_key
+def ai_analyze():
+    """AI analysis endpoint for content analysis"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
+        
+        content = data.get('content', '')
+        project_id = data.get('projectId', '')
+        
+        if not content:
+            return jsonify({'success': False, 'error': 'Content is required'}), 400
+        
+        logger.info(f"AI Analyze request - Project: {project_id}, Content length: {len(content)}")
+        
+        # Create prompt context for AI service
+        prompt_context = f"""
+        As an engineering documentation expert, analyze the following content and provide detailed feedback:
+        
+        Content to analyze:
+        {content}
+        
+        Project ID: {project_id}
+        
+        Please provide:
+        1. Technical accuracy assessment
+        2. Completeness analysis
+        3. Clarity and structure evaluation
+        4. Specific improvement recommendations
+        5. Missing elements identification
+        
+        Focus on engineering documentation standards and best practices.
+        """
+        
+        # Use AI service for analysis
+        ai_client = get_ai_client()
+        task_manager = get_task_manager()
+        
+        from ai_service_client import AgentConfig
+        agent_config = AgentConfig(
+            model="flan-t5-small",
+            temperature=0.5,
+            max_tokens=1500
+        )
+        
+        task_id = task_manager.start_task(prompt_context, agent_config)
+        response = ai_client.poll_task_completion(task_id, max_wait_time=90)
+        
+        if response.status == "completed" and response.agent_reply:
+            # Extract improvements from AI response
+            improvements = [
+                "Add technical specifications",
+                "Include implementation details",
+                "Document testing procedures",
+                "Improve structure and organization"
+            ]
+            
+            return jsonify({
+                'success': True,
+                'analysis': response.agent_reply,
+                'improvements': improvements
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'AI service error: {response.error or "Unknown error"}'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error in AI analyze: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+@app.route('/api/ai/draft', methods=['POST'])
+@require_api_key
+def ai_draft():
+    """AI draft endpoint for content generation"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
+        
+        topic = data.get('topic', '')
+        project_id = data.get('projectId', '')
+        style = data.get('style', 'technical')
+        
+        if not topic:
+            return jsonify({'success': False, 'error': 'Topic is required'}), 400
+        
+        logger.info(f"AI Draft request - Project: {project_id}, Topic: {topic}, Style: {style}")
+        
+        # Create prompt context for AI service
+        prompt_context = f"""
+        As an engineering documentation expert, create a comprehensive draft for the following topic:
+        
+        Topic: {topic}
+        Project ID: {project_id}
+        Style: {style}
+        
+        Create a well-structured engineering document that includes:
+        1. Clear introduction and overview
+        2. Technical specifications and details
+        3. Implementation methodology
+        4. Testing and validation procedures
+        5. Results and analysis framework
+        6. Future improvements and recommendations
+        
+        Use professional engineering documentation standards and ensure technical accuracy.
+        """
+        
+        # Use AI service for drafting
+        ai_client = get_ai_client()
+        task_manager = get_task_manager()
+        
+        from ai_service_client import AgentConfig
+        agent_config = AgentConfig(
+            model="flan-t5-small",
+            temperature=0.7,
+            max_tokens=2000
+        )
+        
+        task_id = task_manager.start_task(prompt_context, agent_config)
+        response = ai_client.poll_task_completion(task_id, max_wait_time=120)
+        
+        if response.status == "completed" and response.agent_reply:
+            # Generate suggestions for the draft
+            suggestions = [
+                "Add technical diagrams",
+                "Include code examples",
+                "Document testing procedures",
+                "Create implementation timeline"
+            ]
+            
+            return jsonify({
+                'success': True,
+                'content': response.agent_reply,
+                'suggestions': suggestions
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'AI service error: {response.error or "Unknown error"}'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error in AI draft: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
+
+@app.route('/api/ai/plan', methods=['POST'])
+@require_api_key
+def ai_plan():
+    """AI planning endpoint for project planning"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
+        
+        project_id = data.get('projectId', '')
+        goals = data.get('goals', [])
+        
+        if not goals:
+            return jsonify({'success': False, 'error': 'Goals are required'}), 400
+        
+        logger.info(f"AI Plan request - Project: {project_id}, Goals: {goals}")
+        
+        # Create prompt context for AI service
+        prompt_context = f"""
+        As an engineering project management expert, create a comprehensive project plan based on the following goals:
+        
+        Project ID: {project_id}
+        Goals: {', '.join(goals)}
+        
+        Create a detailed project plan that includes:
+        1. Project overview and objectives
+        2. Technical requirements and specifications
+        3. Implementation phases and milestones
+        4. Resource requirements and timeline
+        5. Risk assessment and mitigation strategies
+        6. Quality assurance and testing procedures
+        7. Documentation and reporting requirements
+        
+        Focus on engineering project management best practices and ensure all goals are addressed.
+        """
+        
+        # Use AI service for planning
+        ai_client = get_ai_client()
+        task_manager = get_task_manager()
+        
+        from ai_service_client import AgentConfig
+        agent_config = AgentConfig(
+            model="flan-t5-small",
+            temperature=0.6,
+            max_tokens=2500
+        )
+        
+        task_id = task_manager.start_task(prompt_context, agent_config)
+        response = ai_client.poll_task_completion(task_id, max_wait_time=120)
+        
+        if response.status == "completed" and response.agent_reply:
+            # Extract sections from the plan
+            sections = [
+                "Project Overview",
+                "Technical Requirements", 
+                "Implementation Plan",
+                "Testing Procedures",
+                "Documentation Requirements"
+            ]
+            
+            return jsonify({
+                'success': True,
+                'plan': response.agent_reply,
+                'sections': sections
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'AI service error: {response.error or "Unknown error"}'
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error in AI plan: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error'
+        }), 500
 
 if __name__ == '__main__':
     # Create necessary directories

@@ -1,0 +1,19 @@
+{
+  "task_id": "example-task-001",
+  "prompt_context": "Answer the following question by reasoning step-by-step: What are the key factors that determine whether a small business should invest in AI automation? Consider costs, benefits, risks, and implementation challenges. Provide a structured analysis with clear recommendations.",
+  "agent_config": {
+    "temperature": 0.7,
+    "max_tokens": 1500,
+    "stop_sequences": ["\n\n---", "END_OF_ANALYSIS"],
+    "top_p": 0.9,
+    "frequency_penalty": 0.0,
+    "presence_penalty": 0.0
+  },
+  "external_tool_endpoints": {
+    "web_search": "https://api.example.com/search",
+    "calculator": "https://api.example.com/calc",
+    "custom_tools": {
+      "business_analyzer": "https://api.example.com/business-analyzer"
+    }
+  }
+}
