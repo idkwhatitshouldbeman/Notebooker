@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Brain, FileText, Edit3, Settings, Plus, MoreVertical, Calendar, User, Send, Lock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { aiChat } from '@/services/aiService';
 
 interface Section {
   id: string;
@@ -163,7 +164,7 @@ const Project: React.FC = () => {
     }
   };
 
-  const handleChatSubmit = (e: React.FormEvent) => {
+  const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim()) return;
 
@@ -174,18 +175,38 @@ const Project: React.FC = () => {
     };
 
     setChatHistory(prev => [...prev, userMessage]);
-    
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = {
+    const currentMessage = chatMessage;
+    setChatMessage('');
+
+    try {
+      console.log('🤖 Sending chat message to AI service...');
+      
+      // Get project context for better AI responses
+      const projectContext = project ? `${project.title}: ${project.description}` : 'Engineering project';
+      
+      const aiResponse = await aiChat(currentMessage, id || 'default', projectContext);
+      
+      const aiMessage = {
         role: 'ai' as const,
-        message: `I understand you want to work on "${chatMessage}". I can help you with content analysis, drafting new sections, or project planning. What specific aspect would you like me to assist with?`,
+        message: aiResponse.response || aiResponse.message || 'I received your message but couldn\'t generate a response.',
         timestamp: new Date().toISOString()
       };
-      setChatHistory(prev => [...prev, aiResponse]);
-    }, 1000);
-
-    setChatMessage('');
+      
+      setChatHistory(prev => [...prev, aiMessage]);
+      console.log('✅ AI response received and added to chat');
+      
+    } catch (error: any) {
+      console.error('❌ AI chat error:', error);
+      
+      const errorMessage = {
+        role: 'ai' as const,
+        message: `I'm having trouble connecting to the AI service right now. Please try again in a moment. (Error: ${error.message})`,
+        timestamp: new Date().toISOString()
+      };
+      
+      setChatHistory(prev => [...prev, errorMessage]);
+      toast.error('AI service temporarily unavailable');
+    }
   };
 
   const handleSectionAction = (sectionId: string, action: 'edit' | 'delete' | 'lock') => {

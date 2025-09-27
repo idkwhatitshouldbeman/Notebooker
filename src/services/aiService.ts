@@ -1,0 +1,91 @@
+import axios from 'axios';
+
+// Render AI Service Configuration
+const AI_SERVICE_URL = 'https://ntbk-ai-flask-api.onrender.com';
+const API_KEY = 'notebooker-api-key-2024';
+
+// Create axios instance with default headers
+const aiService = axios.create({
+  baseURL: AI_SERVICE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': API_KEY,
+  },
+  timeout: 30000, // 30 second timeout for AI responses
+});
+
+// AI Chat endpoint
+export const aiChat = async (message: string, projectId: string, context?: string) => {
+  try {
+    console.log('🤖 Sending AI chat request:', { message, projectId, context });
+    
+    const response = await aiService.post('/api/ai/chat', {
+      message,
+      projectId,
+      context: context || 'Engineering project documentation'
+    });
+    
+    console.log('✅ AI chat response received:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ AI chat error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'AI chat failed');
+  }
+};
+
+// AI Analysis endpoint
+export const aiAnalyze = async (content: string, projectId: string) => {
+  try {
+    console.log('🔍 Sending AI analysis request:', { content: content.substring(0, 100) + '...', projectId });
+    
+    const response = await aiService.post('/api/ai/analyze', {
+      content,
+      projectId
+    });
+    
+    console.log('✅ AI analysis response received:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ AI analysis error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'AI analysis failed');
+  }
+};
+
+// AI Draft endpoint
+export const aiDraft = async (topic: string, projectId: string, style: string = 'technical') => {
+  try {
+    console.log('✍️ Sending AI draft request:', { topic, projectId, style });
+    
+    const response = await aiService.post('/api/ai/draft', {
+      topic,
+      projectId,
+      style
+    });
+    
+    console.log('✅ AI draft response received:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ AI draft error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'AI draft failed');
+  }
+};
+
+// AI Planning endpoint
+export const aiPlan = async (projectId: string, goals: string[]) => {
+  try {
+    console.log('📋 Sending AI planning request:', { projectId, goals });
+    
+    const response = await aiService.post('/api/ai/plan', {
+      projectId,
+      goals
+    });
+    
+    console.log('✅ AI planning response received:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ AI planning error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'AI planning failed');
+  }
+};
+
+export default aiService;

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Brain, FileText, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { aiAnalyze } from '@/services/aiService';
 
 const Analyze: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,19 +27,27 @@ const Analyze: React.FC = () => {
 
     setAnalyzing(true);
     try {
-      const response = await axios.post(`/api/projects/${id}/analyze`, {
-        sections: selectedSections
-      });
+      console.log('🔍 Starting AI analysis...');
+      
+      // Get content from selected sections
+      const contentToAnalyze = sampleSections
+        .filter(section => selectedSections.includes(section.id))
+        .map(section => `${section.title}: ${section.content}`)
+        .join('\n\n');
 
-      if (response.data.success) {
-        setAnalysis(response.data.analysis);
-        toast.success('Analysis completed successfully!');
+      const aiResponse = await aiAnalyze(contentToAnalyze, id || 'default');
+      
+      if (aiResponse.success) {
+        setAnalysis(aiResponse);
+        toast.success('AI analysis completed successfully!');
+        console.log('✅ AI analysis completed');
       } else {
-        toast.error('Analysis failed');
+        throw new Error(aiResponse.message || 'Analysis failed');
       }
-    } catch (error) {
-      console.error('Error analyzing:', error);
-      // Simulate analysis for demo
+    } catch (error: any) {
+      console.error('❌ AI analysis error:', error);
+      
+      // Fallback to mock analysis if AI service fails
       setTimeout(() => {
         setAnalysis({
           gaps: [
@@ -57,7 +66,7 @@ const Analyze: React.FC = () => {
           ]
         });
         setAnalyzing(false);
-        toast.success('Analysis completed!');
+        toast.success('Analysis completed (using fallback data)!');
       }, 3000);
     }
   };

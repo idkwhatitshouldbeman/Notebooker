@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit3, Loader2, Save, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import { aiDraft } from '@/services/aiService';
 
 const Draft: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,19 +20,21 @@ const Draft: React.FC = () => {
 
     setDrafting(true);
     try {
-      const response = await axios.post(`/api/projects/${id}/draft`, {
-        prompt: prompt
-      });
-
-      if (response.data.success) {
-        setContent(response.data.content);
-        toast.success('Content drafted successfully!');
+      console.log('✍️ Starting AI draft...');
+      
+      const aiResponse = await aiDraft(prompt, id || 'default', 'technical');
+      
+      if (aiResponse.success) {
+        setContent(aiResponse.content || aiResponse.response || 'Draft content generated');
+        toast.success('AI content drafted successfully!');
+        console.log('✅ AI draft completed');
       } else {
-        toast.error('Drafting failed');
+        throw new Error(aiResponse.message || 'Drafting failed');
       }
-    } catch (error) {
-      console.error('Error drafting:', error);
-      // Simulate drafting for demo
+    } catch (error: any) {
+      console.error('❌ AI draft error:', error);
+      
+      // Fallback to mock content if AI service fails
       setTimeout(() => {
         setContent(`# ${prompt}
 
@@ -51,7 +54,7 @@ This is AI-generated content based on your prompt. The AI has analyzed your requ
 
 This content was created using advanced AI models to assist in your engineering documentation process.`);
         setDrafting(false);
-        toast.success('Content drafted successfully!');
+        toast.success('Content drafted successfully (using fallback data)!');
       }, 3000);
     }
   };

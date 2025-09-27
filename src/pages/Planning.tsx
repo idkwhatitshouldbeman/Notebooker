@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, CheckCircle, Clock, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { aiPlan } from '@/services/aiService';
 
 const Planning: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,8 @@ const Planning: React.FC = () => {
     { id: 4, title: 'Testing & Validation', status: 'pending', priority: 'medium' }
   ]);
   const [newTask, setNewTask] = useState('');
+  const [aiPlanning, setAiPlanning] = useState(false);
+  const [goals, setGoals] = useState(['']);
 
   const addTask = () => {
     if (!newTask.trim()) {
@@ -26,6 +29,42 @@ const Planning: React.FC = () => {
 
   const updateTaskStatus = (taskId: number, status: string) => {
     setTasks(tasks.map(task => task.id === taskId ? { ...task, status } : task));
+  };
+
+  const handleAiPlanning = async () => {
+    if (goals.every(goal => !goal.trim())) {
+      toast.error('Please enter at least one project goal');
+      return;
+    }
+
+    setAiPlanning(true);
+    try {
+      console.log('📋 Starting AI planning...');
+      
+      const validGoals = goals.filter(goal => goal.trim());
+      const aiResponse = await aiPlan(id || 'default', validGoals);
+      
+      if (aiResponse.success) {
+        // Parse AI response and add new tasks
+        const newTasks = aiResponse.sections?.map((section: string, index: number) => ({
+          id: Date.now() + index,
+          title: section,
+          status: 'pending' as const,
+          priority: 'medium' as const
+        })) || [];
+        
+        setTasks(prev => [...prev, ...newTasks]);
+        toast.success('AI planning completed successfully!');
+        console.log('✅ AI planning completed');
+      } else {
+        throw new Error(aiResponse.message || 'AI planning failed');
+      }
+    } catch (error: any) {
+      console.error('❌ AI planning error:', error);
+      toast.error('AI planning failed. Please try again.');
+    } finally {
+      setAiPlanning(false);
+    }
   };
 
   return (
