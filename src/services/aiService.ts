@@ -8,16 +8,35 @@ const API_KEY = 'notebooker-api-key-2024';
 export const wakeUpAI = async () => {
   try {
     console.log('🔔 Pinging AI service to wake it up...');
+    console.log('🌐 Target URL:', `${AI_SERVICE_URL}/health`);
+    console.log('🔑 Using API Key:', API_KEY ? 'Present' : 'Missing');
+    
     const response = await fetch(`${AI_SERVICE_URL}/health`, {
       method: 'GET',
       headers: {
         'X-API-Key': API_KEY,
       },
     });
-    console.log('✅ AI service ping successful:', response.status);
+    
+    console.log('✅ AI service ping successful!');
+    console.log('📊 Response status:', response.status);
+    console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()));
+    
     return { success: true, status: response.status };
   } catch (error: any) {
-    console.log('⚠️ AI service ping failed (service may be sleeping):', error.message);
+    console.log('⚠️ AI service ping failed!');
+    console.log('❌ Error type:', error.name);
+    console.log('❌ Error message:', error.message);
+    console.log('❌ Full error:', error);
+    
+    if (error.message.includes('CORS')) {
+      console.log('🚨 CORS ERROR DETECTED: The AI service is not allowing requests from Netlify');
+      console.log('🚨 SOLUTION: The other AI needs to add CORS support to their Flask app');
+    } else if (error.message.includes('Failed to fetch')) {
+      console.log('🚨 NETWORK ERROR: The AI service is completely down or unreachable');
+      console.log('🚨 POSSIBLE CAUSES: Service crashed, domain changed, or network issue');
+    }
+    
     return { success: false, error: error.message };
   }
 };

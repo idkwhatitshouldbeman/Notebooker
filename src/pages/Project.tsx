@@ -181,18 +181,26 @@ const Project: React.FC = () => {
 
     // Wake up AI service if it's asleep
     if (aiStatus === 'asleep') {
+      console.log('🔔 AI service is asleep, changing status to waking...');
       setAiStatus('waking');
-      console.log('🔔 AI service is asleep, waking it up...');
+      console.log('🟡 Status changed to: waking');
       
+      console.log('🔔 Attempting to wake up AI service...');
       const wakeResult = await wakeUpAI();
+      
       if (wakeResult.success) {
+        console.log('✅ AI service wake-up successful:', wakeResult);
         setAiStatus('awake');
-        console.log('✅ AI service is now awake');
-        toast.success('AI service is waking up...');
+        console.log('🟢 Status changed to: awake');
+        toast.success('AI service is now awake!');
       } else {
+        console.log('❌ AI service wake-up failed:', wakeResult.error);
+        console.log('🔴 Status remains: asleep (CORS issue)');
         setAiStatus('asleep');
-        console.log('❌ Failed to wake AI service');
+        toast.error('AI service is sleeping. CORS issue needs fixing.');
       }
+    } else {
+      console.log(`🤖 AI service status is: ${aiStatus}, proceeding with chat...`);
     }
 
     try {
@@ -214,14 +222,21 @@ const Project: React.FC = () => {
       console.log('✅ AI response received and added to chat');
       
     } catch (error: any) {
-      console.error('❌ AI chat error:', error);
+      console.error('❌ AI chat error occurred!');
+      console.error('❌ Error type:', error.name);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Full error object:', error);
       
       // Check if it's a CORS or network error (service asleep)
       if (error.message.includes('CORS') || error.message.includes('Network Error')) {
+        console.log('🚨 CORS/NETWORK ERROR: Setting status to asleep');
         setAiStatus('asleep');
-        toast.error('AI service is sleeping. Try again in a moment.');
+        console.log('🔴 Status changed to: asleep');
+        toast.error('AI service is sleeping. CORS issue needs fixing.');
       } else {
+        console.log('🚨 OTHER ERROR: Setting status to asleep');
         setAiStatus('asleep');
+        console.log('🔴 Status changed to: asleep');
         toast.error('AI service temporarily unavailable');
       }
       
@@ -232,6 +247,7 @@ const Project: React.FC = () => {
       };
       
       setChatHistory(prev => [...prev, errorMessage]);
+      console.log('💬 Error message added to chat history');
     }
   };
 
