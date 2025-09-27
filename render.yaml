@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ntbk-ai-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    rootDir: backend
+    envVars:
+      - key: API_KEY
+        value: notebooker-api-key-2024
+      - key: PORT
+        value: 5002
+      - key: DEBUG
+        value: false
