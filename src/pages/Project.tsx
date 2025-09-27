@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Brain, FileText, Edit3, Settings, Plus, MoreVertical, Calendar, User, Send, Lock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { aiChat } from '@/services/aiService';
+import { aiChat, wakeUpAI } from '@/services/aiService';
 
 interface Section {
   id: string;
@@ -34,6 +34,7 @@ const Project: React.FC = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'ai', message: string, timestamp: string }>>([]);
   const [showSectionMenu, setShowSectionMenu] = useState<string | null>(null);
+  const [aiStatus, setAiStatus] = useState<'asleep' | 'waking' | 'awake'>('asleep');
 
   useEffect(() => {
     if (id) {
@@ -178,6 +179,22 @@ const Project: React.FC = () => {
     const currentMessage = chatMessage;
     setChatMessage('');
 
+    // Wake up AI service if it's asleep
+    if (aiStatus === 'asleep') {
+      setAiStatus('waking');
+      console.log('🔔 AI service is asleep, waking it up...');
+      
+      const wakeResult = await wakeUpAI();
+      if (wakeResult.success) {
+        setAiStatus('awake');
+        console.log('✅ AI service is now awake');
+        toast.success('AI service is waking up...');
+      } else {
+        setAiStatus('asleep');
+        console.log('❌ Failed to wake AI service');
+      }
+    }
+
     try {
       console.log('🤖 Sending chat message to AI service...');
       
@@ -193,10 +210,20 @@ const Project: React.FC = () => {
       };
       
       setChatHistory(prev => [...prev, aiMessage]);
+      setAiStatus('awake');
       console.log('✅ AI response received and added to chat');
       
     } catch (error: any) {
       console.error('❌ AI chat error:', error);
+      
+      // Check if it's a CORS or network error (service asleep)
+      if (error.message.includes('CORS') || error.message.includes('Network Error')) {
+        setAiStatus('asleep');
+        toast.error('AI service is sleeping. Try again in a moment.');
+      } else {
+        setAiStatus('asleep');
+        toast.error('AI service temporarily unavailable');
+      }
       
       const errorMessage = {
         role: 'ai' as const,
@@ -205,7 +232,6 @@ const Project: React.FC = () => {
       };
       
       setChatHistory(prev => [...prev, errorMessage]);
-      toast.error('AI service temporarily unavailable');
     }
   };
 
@@ -364,11 +390,27 @@ const Project: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Side - AI Chat */}
           <div className="space-y-6">
-            <div className="cosmic-card p-6">
-              <div className="flex items-center space-x-3 mb-4">
-                <Brain className="w-6 h-6 text-primary" />
-                <h2 className="text-xl font-semibold text-cosmic-white">AI Assistant</h2>
-              </div>
+                <div className="cosmic-card p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <Brain className="w-6 h-6 text-primary" />
+                    <h2 className="text-xl font-semibold text-cosmic-white">AI Assistant</h2>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-3 h-3 rounded-full ${
+                        aiStatus === 'awake' ? 'bg-success animate-pulse' :
+                        aiStatus === 'waking' ? 'bg-warning animate-pulse' :
+                        'bg-error'
+                      }`}></div>
+                      <span className={`text-xs font-medium ${
+                        aiStatus === 'awake' ? 'text-success' :
+                        aiStatus === 'waking' ? 'text-warning' :
+                        'text-error'
+                      }`}>
+                        {aiStatus === 'awake' ? 'Online' :
+                         aiStatus === 'waking' ? 'Waking up...' :
+                         'Offline'}
+                      </span>
+                    </div>
+                  </div>
               
               {/* Chat Messages */}
               <div className="h-96 overflow-y-auto space-y-4 mb-4">

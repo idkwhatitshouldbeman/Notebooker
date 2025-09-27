@@ -4,6 +4,24 @@ import axios from 'axios';
 const AI_SERVICE_URL = 'https://ntbk-ai-flask-api.onrender.com';
 const API_KEY = 'notebooker-api-key-2024';
 
+// Wake up Render service (ping endpoint)
+export const wakeUpAI = async () => {
+  try {
+    console.log('🔔 Pinging AI service to wake it up...');
+    const response = await fetch(`${AI_SERVICE_URL}/health`, {
+      method: 'GET',
+      headers: {
+        'X-API-Key': API_KEY,
+      },
+    });
+    console.log('✅ AI service ping successful:', response.status);
+    return { success: true, status: response.status };
+  } catch (error: any) {
+    console.log('⚠️ AI service ping failed (service may be sleeping):', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
 // Create axios instance with default headers
 const aiService = axios.create({
   baseURL: AI_SERVICE_URL,
