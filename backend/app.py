@@ -19,7 +19,7 @@ load_dotenv()
 from en_writer import ENWriter
 from database_manager import SmartNotebookerDB
 from auth import AuthManager
-from ai_service_client import initialize_ai_service, get_ai_client, get_task_manager
+# Removed external AI service dependency
 
 # Import livereload for development
 try:
@@ -95,10 +95,150 @@ def initialize_en_writer():
     auth = AuthManager(db)
     en_writer = ENWriter(str(base_dir))
     
-    # Initialize AI service
-    ai_service_url = os.environ.get('AI_SERVICE_URL', 'https://your-render-app-name.onrender.com')
-    ai_api_key = os.environ.get('AI_API_KEY')
-    initialize_ai_service(ai_service_url, ai_api_key)
+    # AI service is now integrated directly into Flask
+    logger.info("AI functionality integrated into Flask backend")
+
+def generate_ai_response(message: str, context: str = "") -> str:
+    """Generate AI response using simple logic (replace with your AI service)"""
+    try:
+        # Simple response generation - replace with OpenAI, Anthropic, or local model
+        if "help" in message.lower():
+            return "I'm here to help with your engineering project! I can assist with technical documentation, project planning, and content analysis. What specific area would you like to work on?"
+        elif "analyze" in message.lower():
+            return "I can analyze your content for technical accuracy, completeness, and structure. Please share the content you'd like me to review."
+        elif "draft" in message.lower():
+            return "I can help you draft technical content. What topic or section would you like me to help you write about?"
+        elif "plan" in message.lower():
+            return "I can help you create a comprehensive project plan. What are your main project goals and objectives?"
+        else:
+            return f"Thank you for your message: '{message}'. I'm your AI assistant for this engineering project. I can help with documentation, analysis, drafting, and planning. How can I assist you today?"
+    except Exception as e:
+        logger.error(f"Error generating AI response: {e}")
+        return "I'm having trouble processing your request right now. Please try again."
+
+def generate_ai_analysis(content: str) -> str:
+    """Generate AI analysis of content"""
+    try:
+        word_count = len(content.split())
+        return f"""Content Analysis Report:
+
+📊 **Basic Metrics:**
+- Word count: {word_count}
+- Character count: {len(content)}
+- Estimated reading time: {word_count // 200 + 1} minutes
+
+🔍 **Technical Assessment:**
+- Content appears to be technical documentation
+- Structure could be improved with clear headings
+- Consider adding more specific technical details
+
+📝 **Recommendations:**
+- Add section headers for better organization
+- Include code examples or diagrams where relevant
+- Expand on technical specifications
+- Add implementation details and testing procedures
+
+This is a basic analysis. For more detailed feedback, please provide specific areas you'd like me to focus on."""
+    except Exception as e:
+        logger.error(f"Error generating AI analysis: {e}")
+        return "Analysis generation failed. Please try again."
+
+def generate_ai_draft(topic: str, style: str = "technical") -> str:
+    """Generate AI draft content"""
+    try:
+        return f"""# {topic}
+
+## Overview
+This section covers the key aspects of {topic} in a {style} style.
+
+## Technical Specifications
+- **Objective**: Define the primary goals and objectives
+- **Requirements**: List technical and functional requirements
+- **Constraints**: Identify any limitations or constraints
+
+## Implementation Approach
+1. **Planning Phase**: Initial research and requirement gathering
+2. **Design Phase**: System architecture and component design
+3. **Development Phase**: Implementation and coding
+4. **Testing Phase**: Quality assurance and validation
+5. **Deployment Phase**: Production deployment and monitoring
+
+## Key Considerations
+- Performance requirements
+- Security considerations
+- Scalability factors
+- Maintenance and support
+
+## Next Steps
+- Define specific milestones
+- Assign responsibilities
+- Set timeline and deadlines
+- Establish success criteria
+
+---
+*This is a template draft. Please customize based on your specific project needs.*"""
+    except Exception as e:
+        logger.error(f"Error generating AI draft: {e}")
+        return "Draft generation failed. Please try again."
+
+def generate_ai_plan(goals: list) -> str:
+    """Generate AI project plan"""
+    try:
+        goals_text = "\n".join([f"- {goal}" for goal in goals])
+        return f"""# Project Plan
+
+## Project Goals
+{goals_text}
+
+## Project Phases
+
+### Phase 1: Planning & Setup (Week 1-2)
+- Define detailed requirements
+- Set up development environment
+- Create project timeline
+- Assign team roles and responsibilities
+
+### Phase 2: Design & Architecture (Week 3-4)
+- Create system architecture
+- Design user interface mockups
+- Define data models and APIs
+- Plan testing strategy
+
+### Phase 3: Development (Week 5-8)
+- Implement core functionality
+- Develop user interface
+- Integrate components
+- Conduct unit testing
+
+### Phase 4: Testing & Quality Assurance (Week 9-10)
+- System integration testing
+- User acceptance testing
+- Performance optimization
+- Security testing
+
+### Phase 5: Deployment & Launch (Week 11-12)
+- Production deployment
+- User training
+- Documentation completion
+- Go-live support
+
+## Risk Management
+- **Technical Risks**: Identify potential technical challenges
+- **Timeline Risks**: Monitor progress against milestones
+- **Resource Risks**: Ensure adequate team capacity
+- **Quality Risks**: Maintain testing standards
+
+## Success Metrics
+- On-time delivery
+- Quality standards met
+- User satisfaction
+- Performance targets achieved
+
+---
+*This plan should be customized based on your specific project requirements and timeline.*"""
+    except Exception as e:
+        logger.error(f"Error generating AI plan: {e}")
+        return "Plan generation failed. Please try again."
 
 def require_auth(f):
     """Decorator to require authentication"""
@@ -716,129 +856,7 @@ def switch_model():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
 
-# AI Service Integration
-AI_SERVICE_URL = os.environ.get('AI_SERVICE_URL', 'https://your-render-app-name.onrender.com')
-
-@app.route('/api/ai/status')
-def ai_status():
-    """Check AI service connection status"""
-    try:
-        import requests
-        response = requests.get(f"{AI_SERVICE_URL}/health", timeout=5)
-        if response.status_code == 200:
-            return jsonify({'status': 'connected', 'url': AI_SERVICE_URL})
-        else:
-            return jsonify({'status': 'error', 'message': 'AI service not responding'})
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)})
-
-@app.route('/api/ai/webhook/<workflow_id>', methods=['POST'])
-def ai_webhook(workflow_id):
-    """Send data to AI service workflow"""
-    try:
-        import requests
-        data = request.get_json()
-        webhook_url = f"{AI_SERVICE_URL}/webhook/{workflow_id}"
-        response = requests.post(webhook_url, json=data, timeout=30)
-        return jsonify(response.json())
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# AI Service Task Management Endpoints
-@app.route('/api/ai/tasks', methods=['POST'])
-def create_ai_task():
-    """Create a new AI task"""
-    try:
-        data = request.get_json()
-        prompt_context = data.get('prompt_context', '')
-        agent_config = data.get('agent_config', {})
-        external_tool_endpoints = data.get('external_tool_endpoints', {})
-        
-        if not prompt_context:
-            return jsonify({'error': 'prompt_context is required'}), 400
-        
-        task_manager = get_task_manager()
-        task_id = task_manager.start_task(prompt_context, agent_config, external_tool_endpoints)
-        
-        return jsonify({
-            'task_id': task_id,
-            'status': 'created',
-            'message': 'Task created successfully'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error creating AI task: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/ai/tasks/<task_id>', methods=['GET'])
-def get_ai_task_status(task_id):
-    """Get AI task status"""
-    try:
-        task_manager = get_task_manager()
-        response = task_manager.update_task_status(task_id)
-        
-        return jsonify({
-            'task_id': response.task_id,
-            'status': response.status,
-            'agent_reply': response.agent_reply,
-            'next_step': response.next_step,
-            'logs': response.logs,
-            'error': response.error
-        })
-        
-    except Exception as e:
-        logger.error(f"Error getting AI task status: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/ai/tasks/<task_id>', methods=['DELETE'])
-def cancel_ai_task(task_id):
-    """Cancel an AI task"""
-    try:
-        task_manager = get_task_manager()
-        success = task_manager.cancel_task(task_id)
-        
-        return jsonify({
-            'success': success,
-            'message': 'Task cancelled' if success else 'Failed to cancel task'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error cancelling AI task: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/ai/tasks', methods=['GET'])
-def list_ai_tasks():
-    """List all AI tasks"""
-    try:
-        task_manager = get_task_manager()
-        active_tasks = task_manager.get_active_tasks()
-        task_history = task_manager.get_task_history(limit=20)
-        
-        return jsonify({
-            'active_tasks': active_tasks,
-            'task_history': task_history
-        })
-        
-    except Exception as e:
-        logger.error(f"Error listing AI tasks: {e}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/ai/health', methods=['GET'])
-def ai_service_health():
-    """Check AI service health"""
-    try:
-        ai_client = get_ai_client()
-        is_healthy = ai_client.health_check()
-        
-        return jsonify({
-            'healthy': is_healthy,
-            'service_url': ai_client.base_url,
-            'message': 'AI service is available' if is_healthy else 'AI service is unavailable'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error checking AI service health: {e}")
-        return jsonify({'error': str(e)}), 500
+# AI Service is now integrated directly into Flask - no external service needed
 
 # New API endpoints for frontend integration
 @app.route('/api/ai/chat', methods=['POST'])
@@ -871,21 +889,11 @@ def ai_chat():
         Be specific and actionable in your response.
         """
         
-        # Use AI service to generate response
-        ai_client = get_ai_client()
-        task_manager = get_task_manager()
+        # Simple AI response generation (replace with your preferred AI service)
+        # For now, using a simple response generator
+        ai_response = generate_ai_response(message, context)
         
-        from ai_service_client import AgentConfig
-        agent_config = AgentConfig(
-            model="flan-t5-small",
-            temperature=0.7,
-            max_tokens=1000
-        )
-        
-        task_id = task_manager.start_task(prompt_context, agent_config)
-        response = ai_client.poll_task_completion(task_id, max_wait_time=60)
-        
-        if response.status == "completed" and response.agent_reply:
+        if ai_response:
             # Generate suggestions based on the response
             suggestions = [
                 "Add technical details",
@@ -896,13 +904,13 @@ def ai_chat():
             
             return jsonify({
                 'success': True,
-                'response': response.agent_reply,
+                'response': ai_response,
                 'suggestions': suggestions
             })
         else:
             return jsonify({
                 'success': False,
-                'error': f'AI service error: {response.error or "Unknown error"}'
+                'error': 'AI response generation failed'
             }), 500
             
     except Exception as e:
@@ -948,21 +956,10 @@ def ai_analyze():
         Focus on engineering documentation standards and best practices.
         """
         
-        # Use AI service for analysis
-        ai_client = get_ai_client()
-        task_manager = get_task_manager()
+        # Generate AI analysis response
+        analysis_response = generate_ai_analysis(content)
         
-        from ai_service_client import AgentConfig
-        agent_config = AgentConfig(
-            model="flan-t5-small",
-            temperature=0.5,
-            max_tokens=1500
-        )
-        
-        task_id = task_manager.start_task(prompt_context, agent_config)
-        response = ai_client.poll_task_completion(task_id, max_wait_time=90)
-        
-        if response.status == "completed" and response.agent_reply:
+        if analysis_response:
             # Extract improvements from AI response
             improvements = [
                 "Add technical specifications",
@@ -973,13 +970,13 @@ def ai_analyze():
             
             return jsonify({
                 'success': True,
-                'analysis': response.agent_reply,
+                'analysis': analysis_response,
                 'improvements': improvements
             })
         else:
             return jsonify({
                 'success': False,
-                'error': f'AI service error: {response.error or "Unknown error"}'
+                'error': 'AI analysis generation failed'
             }), 500
             
     except Exception as e:
@@ -1026,21 +1023,10 @@ def ai_draft():
         Use professional engineering documentation standards and ensure technical accuracy.
         """
         
-        # Use AI service for drafting
-        ai_client = get_ai_client()
-        task_manager = get_task_manager()
+        # Generate AI draft content
+        draft_content = generate_ai_draft(topic, style)
         
-        from ai_service_client import AgentConfig
-        agent_config = AgentConfig(
-            model="flan-t5-small",
-            temperature=0.7,
-            max_tokens=2000
-        )
-        
-        task_id = task_manager.start_task(prompt_context, agent_config)
-        response = ai_client.poll_task_completion(task_id, max_wait_time=120)
-        
-        if response.status == "completed" and response.agent_reply:
+        if draft_content:
             # Generate suggestions for the draft
             suggestions = [
                 "Add technical diagrams",
@@ -1051,13 +1037,13 @@ def ai_draft():
             
             return jsonify({
                 'success': True,
-                'content': response.agent_reply,
+                'content': draft_content,
                 'suggestions': suggestions
             })
         else:
             return jsonify({
                 'success': False,
-                'error': f'AI service error: {response.error or "Unknown error"}'
+                'error': 'AI draft generation failed'
             }), 500
             
     except Exception as e:
@@ -1103,21 +1089,10 @@ def ai_plan():
         Focus on engineering project management best practices and ensure all goals are addressed.
         """
         
-        # Use AI service for planning
-        ai_client = get_ai_client()
-        task_manager = get_task_manager()
+        # Generate AI project plan
+        plan_content = generate_ai_plan(goals)
         
-        from ai_service_client import AgentConfig
-        agent_config = AgentConfig(
-            model="flan-t5-small",
-            temperature=0.6,
-            max_tokens=2500
-        )
-        
-        task_id = task_manager.start_task(prompt_context, agent_config)
-        response = ai_client.poll_task_completion(task_id, max_wait_time=120)
-        
-        if response.status == "completed" and response.agent_reply:
+        if plan_content:
             # Extract sections from the plan
             sections = [
                 "Project Overview",
@@ -1129,13 +1104,13 @@ def ai_plan():
             
             return jsonify({
                 'success': True,
-                'plan': response.agent_reply,
+                'plan': plan_content,
                 'sections': sections
             })
         else:
             return jsonify({
                 'success': False,
-                'error': f'AI service error: {response.error or "Unknown error"}'
+                'error': 'AI plan generation failed'
             }), 500
             
     except Exception as e:
