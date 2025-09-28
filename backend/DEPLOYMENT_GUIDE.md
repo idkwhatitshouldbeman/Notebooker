@@ -9,9 +9,9 @@
 3. **Connect your GitHub repository**: `idkwhatitshouldbeman/NTBK_AI`
 4. **Configure the service:**
    - **Name**: `ntbk-ai-flask-api`
-   - **Environment**: `Python 3`
+   - **Environment**: `Py 3`
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `python app.py`
+   - **Start Command**: `py app.py`
    - **Plan**: `Starter` (free tier)
 
 ### 2. Set Environment Variables
@@ -92,7 +92,7 @@ CORS is enabled for:
 Run the test script locally:
 
 ```bash
-python test_api.py
+py test_api.py
 ```
 
 Or test with curl:
@@ -120,7 +120,7 @@ All endpoints return JSON in this format:
 
 ### Common Issues:
 
-1. **Build fails**: Check Python version (3.11+)
+1. **Build fails**: Check Py version (3.11+)
 2. **CORS errors**: Verify origins in app.py
 3. **AI service errors**: Check AI_SERVICE_URL environment variable
 4. **Authentication fails**: Verify X-API-Key header

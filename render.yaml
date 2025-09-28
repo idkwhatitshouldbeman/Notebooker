@@ -1,9 +1,9 @@
 services:
   - type: web
     name: ntbk-ai-backend
-    env: python
+    env: py
     buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
+    startCommand: py main.py
     rootDir: backend
     envVars:
       - key: API_KEY

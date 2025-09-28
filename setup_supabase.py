@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env py
 """
 Supabase Setup Script for Notebooker
 This script helps you configure Supabase connection

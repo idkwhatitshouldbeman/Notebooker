@@ -1,10 +1,10 @@
 services:
   - type: web
     name: ntbk-ai-flask-api
-    env: python
+    env: py
     plan: starter
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: py app.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
