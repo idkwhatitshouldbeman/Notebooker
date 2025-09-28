@@ -11,6 +11,10 @@ from pathlib import Path
 import logging
 import hashlib
 import secrets
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from en_writer import ENWriter
 from database_manager import SmartNotebookerDB
