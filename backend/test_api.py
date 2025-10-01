@@ -7,7 +7,7 @@ import requests
 import json
 
 # Configuration
-API_BASE_URL = "http://localhost:5002"  # Change this to your Render URL when deployed
+API_BASE_URL = "https://ntbk-ai-flask-api.onrender.com"  # Deployed Render URL
 API_KEY = "notebooker-api-key-2024"
 
 headers = {

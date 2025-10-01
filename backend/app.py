@@ -39,6 +39,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change 
 CORS(app, 
      origins=[
          "https://notebooker.netlify.app",
+         "https://nobooker.netlify.app",  # Add the actual Netlify URL
          "http://localhost:8080",
          "http://localhost:3000",
          "http://127.0.0.1:8080",
@@ -46,7 +47,8 @@ CORS(app,
          "https://*.netlify.app"  # Allow all Netlify subdomains
      ],
      allow_headers=["Content-Type", "X-API-Key", "Authorization"],
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     supports_credentials=True
 )
 
 # API Key for authentication
@@ -387,10 +389,10 @@ def health_check():
     """Health check endpoint for monitoring"""
     return {"status": "healthy", "service": "NTBK_AI Flask API", "timestamp": datetime.now().isoformat()}, 200
 
-@app.route('/')
-def index():
-    """Main dashboard - redirect to auth if not logged in"""
-    return redirect(url_for('auth_page'))
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint"""
+    return {"message": "NTBK_AI Flask API is running", "status": "healthy"}, 200
 
 @app.route('/dashboard')
 def dashboard():
