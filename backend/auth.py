@@ -40,20 +40,30 @@ class AuthManager:
     def create_user(self, username: str, email: str, password: str) -> Dict[str, Any]:
         """Create a new user account"""
         try:
+            logger.info(f"👤 Creating new user", username=username, email=email)
+            
             # Check if user already exists
             existing_user = self.db.get_user_by_username(username)
             if existing_user:
+                logger.warning(f"⚠️ Username already exists", username=username)
                 return {"success": False, "error": "Username already exists"}
             
             # Hash password
+            logger.info("🔐 Hashing password...")
             password_hash = self.hash_password(password)
+            logger.info("✅ Password hashed successfully")
             
             # Create user in database
+            logger.info("💾 Creating user in database...")
             user_id = self.db.create_user(username, email, {"password_hash": password_hash})
+            logger.info(f"✅ User created in database", user_id=user_id)
             
             # Create session
+            logger.info("🎫 Creating user session...")
             session_token = self.create_session(user_id)
+            logger.info("✅ User session created")
             
+            logger.info(f"🎉 User creation completed successfully", user_id=user_id, username=username)
             return {
                 "success": True,
                 "user_id": user_id,
@@ -61,7 +71,7 @@ class AuthManager:
                 "session_token": session_token
             }
         except Exception as e:
-            logger.error(f"Failed to create user: {e}")
+            logger.error(f"❌ Failed to create user: {e}")
             return {"success": False, "error": str(e)}
     
     def login_user(self, username: str, password: str) -> Dict[str, Any]:

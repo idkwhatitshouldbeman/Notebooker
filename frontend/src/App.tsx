@@ -26,6 +26,9 @@ const App = () => {
     apiUrl: process.env.REACT_APP_API_URL,
     timestamp: new Date().toISOString()
   });
+  console.log('🚀 Frontend initialization complete');
+  console.log('📱 React Router setup complete');
+  console.log('🎨 UI components loaded');
 
   return (
     <QueryClientProvider client={queryClient}>

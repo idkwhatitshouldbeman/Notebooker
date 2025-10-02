@@ -35,18 +35,17 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change this in production
 
-# Configure CORS - More permissive for immediate testing
+# Configure CORS - Fixed for production
 CORS(app, 
      origins=[
+         "https://nobooker.netlify.app",
          "https://notebooker.netlify.app",
-         "https://nobooker.netlify.app",  # Add the actual Netlify URL
          "http://localhost:8080",
          "http://localhost:3000",
          "http://127.0.0.1:8080",
-         "http://127.0.0.1:3000",
-         "https://*.netlify.app"  # Allow all Netlify subdomains
+         "http://127.0.0.1:3000"
      ],
-     allow_headers=["Content-Type", "X-API-Key", "Authorization"],
+     allow_headers=["Content-Type", "X-API-Key", "Authorization", "Access-Control-Allow-Origin"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      supports_credentials=True
 )
@@ -61,17 +60,30 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 # Force Jinja2 to reload templates
 app.jinja_env.auto_reload = True
 
-# Add cache control headers for development
+# Add cache control headers and CORS for production
 @app.after_request
 def add_header(response):
     if 'no-cache' not in request.headers.get('Cache-Control', ''):
         response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     
-    # Additional CORS headers for immediate fix
-    response.headers['Access-Control-Allow-Origin'] = '*'
+    # Fixed CORS headers for production
+    origin = request.headers.get('Origin')
+    if origin in [
+        "https://nobooker.netlify.app",
+        "https://notebooker.netlify.app",
+        "http://localhost:8080",
+        "http://localhost:3000",
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:3000"
+    ]:
+        response.headers['Access-Control-Allow-Origin'] = origin
+    else:
+        response.headers['Access-Control-Allow-Origin'] = 'https://nobooker.netlify.app'
+    
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, X-API-Key, Authorization'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, X-API-Key, Authorization, Access-Control-Allow-Origin'
     response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Max-Age'] = '86400'
     
     return response
 
@@ -103,19 +115,26 @@ def initialize_en_writer():
 def generate_ai_response(message: str, context: str = "") -> str:
     """Generate AI response using simple logic (replace with your AI service)"""
     try:
+        logger.info(f"🤖 Generating AI response", message_length=len(message), context_length=len(context))
+        
         # Simple response generation - replace with OpenAI, Anthropic, or local model
         if "help" in message.lower():
+            logger.info("📝 Generating help response")
             return "I'm here to help with your engineering project! I can assist with technical documentation, project planning, and content analysis. What specific area would you like to work on?"
         elif "analyze" in message.lower():
+            logger.info("📊 Generating analysis response")
             return "I can analyze your content for technical accuracy, completeness, and structure. Please share the content you'd like me to review."
         elif "draft" in message.lower():
+            logger.info("📄 Generating draft response")
             return "I can help you draft technical content. What topic or section would you like me to help you write about?"
         elif "plan" in message.lower():
+            logger.info("📋 Generating planning response")
             return "I can help you create a comprehensive project plan. What are your main project goals and objectives?"
         else:
+            logger.info("💬 Generating general response")
             return f"Thank you for your message: '{message}'. I'm your AI assistant for this engineering project. I can help with documentation, analysis, drafting, and planning. How can I assist you today?"
     except Exception as e:
-        logger.error(f"Error generating AI response: {e}")
+        logger.error(f"❌ Error generating AI response: {e}")
         return "I'm having trouble processing your request right now. Please try again."
 
 def generate_ai_analysis(content: str) -> str:
@@ -387,7 +406,22 @@ def logout():
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint for monitoring"""
-    return {"status": "healthy", "service": "NTBK_AI Flask API", "timestamp": datetime.now().isoformat()}, 200
+    logger.info("🏥 Health check endpoint called")
+    try:
+        # Check if services are initialized
+        health_status = {
+            "status": "healthy", 
+            "service": "NTBK_AI Flask API", 
+            "timestamp": datetime.now().isoformat(),
+            "database": "connected" if db else "not_initialized",
+            "ai_service": "available" if en_writer else "not_initialized",
+            "auth": "available" if auth else "not_initialized"
+        }
+        logger.info("✅ Health check completed", status=health_status["status"])
+        return health_status, 200
+    except Exception as e:
+        logger.error(f"❌ Health check failed: {e}")
+        return {"status": "unhealthy", "error": str(e), "timestamp": datetime.now().isoformat()}, 500
 
 @app.route('/', methods=['GET'])
 def root():
@@ -866,18 +900,23 @@ def switch_model():
 def ai_chat():
     """AI chat endpoint for conversational assistance"""
     try:
+        logger.info("🤖 AI Chat endpoint called")
         data = request.get_json()
         if not data:
+            logger.error("❌ No JSON data provided")
             return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
         
         message = data.get('message', '')
         project_id = data.get('projectId', '')
         context = data.get('context', '')
         
+        logger.info(f"📝 AI Chat request received", project_id=project_id, message_length=len(message), context_length=len(context))
+        
         if not message:
+            logger.error("❌ Message is required")
             return jsonify({'success': False, 'error': 'Message is required'}), 400
         
-        logger.info(f"AI Chat request - Project: {project_id}, Message: {message[:100]}...")
+        logger.info(f"🧠 Processing AI Chat request", project_id=project_id, message_preview=message[:100])
         
         # Create prompt context for AI service
         prompt_context = f"""
@@ -891,9 +930,11 @@ def ai_chat():
         Be specific and actionable in your response.
         """
         
+        logger.info("🔧 Generating AI response...")
         # Simple AI response generation (replace with your preferred AI service)
         # For now, using a simple response generator
         ai_response = generate_ai_response(message, context)
+        logger.info("✅ AI response generated")
         
         if ai_response:
             # Generate suggestions based on the response
@@ -904,19 +945,21 @@ def ai_chat():
                 "Create project timeline"
             ]
             
+            logger.info("✅ AI Chat request completed successfully")
             return jsonify({
                 'success': True,
                 'response': ai_response,
                 'suggestions': suggestions
             })
         else:
+            logger.error("❌ AI response generation failed")
             return jsonify({
                 'success': False,
                 'error': 'AI response generation failed'
             }), 500
             
     except Exception as e:
-        logger.error(f"Error in AI chat: {e}")
+        logger.error(f"❌ Error in AI chat: {e}")
         return jsonify({
             'success': False,
             'error': 'Internal server error'

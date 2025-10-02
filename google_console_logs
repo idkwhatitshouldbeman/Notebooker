@@ -1,0 +1,115 @@
+index-LYWbto7-.js:298 🌟 NOTEBOOKR App starting up...
+index-LYWbto7-.js:298 🔧 Environment: Object
+index-LYWbto7-.js:248 🏠 Dashboard component mounted
+index-LYWbto7-.js:248 🔍 Checking authentication status...
+index-LYWbto7-.js:248 🔐 Auth status: Object
+index-LYWbto7-.js:248 📂 Loading projects...
+index-LYWbto7-.js:248 🌐 Attempting to fetch projects from API...
+index-LYWbto7-.js:248 ✅ API response received: <!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notebooker - AI-Assisted Engineering Notebook</title>
+    <script type="module" crossorigin src="/assets/index-LYWbto7-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-D4SbACYc.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+
+index-LYWbto7-.js:248 ⚠️ API returned unsuccessful response, using sample data
+u @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 🏁 Project loading completed
+index-LYWbto7-.js:248 🔔 AI service is asleep, changing status to waking...
+index-LYWbto7-.js:248 🟡 Status changed to: waking
+index-LYWbto7-.js:248 🔔 Attempting to wake up AI service...
+index-LYWbto7-.js:248 🔔 Pinging AI service to wake it up...
+index-LYWbto7-.js:248 🌐 Target URL: https://ntbk-ai-flask-api.onrender.com/health
+index-LYWbto7-.js:248 🔑 Using API Key: Present
+1:1 Access to fetch at 'https://ntbk-ai-flask-api.onrender.com/health' from origin 'https://nobooker.netlify.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ntbk-ai-flask-api.onrender.com/health:1  Failed to load resource: net::ERR_FAILED
+index-LYWbto7-.js:248 ⚠️ AI service ping failed!
+index-LYWbto7-.js:248 ❌ Error type: TypeError
+index-LYWbto7-.js:248 ❌ Error message: Failed to fetch
+index-LYWbto7-.js:248 ❌ Full error: TypeError: Failed to fetch
+    at NC (index-LYWbto7-.js:248:13645)
+    at j (index-LYWbto7-.js:248:19686)
+    at Object.ix (index-LYWbto7-.js:37:9855)
+    at lx (index-LYWbto7-.js:37:10009)
+    at cx (index-LYWbto7-.js:37:10066)
+    at sf (index-LYWbto7-.js:37:31446)
+    at sm (index-LYWbto7-.js:37:31863)
+    at index-LYWbto7-.js:37:36776
+    at Bu (index-LYWbto7-.js:40:36896)
+    at Ph (index-LYWbto7-.js:37:8991)
+index-LYWbto7-.js:248 🚨 NETWORK ERROR: The AI service is completely down or unreachable
+index-LYWbto7-.js:248 🚨 POSSIBLE CAUSES: Service crashed, domain changed, or network issue
+index-LYWbto7-.js:248 ❌ AI service wake-up failed: Failed to fetch
+index-LYWbto7-.js:248 🔴 Status remains: asleep (CORS issue)
+index-LYWbto7-.js:248 🤖 Sending chat message to AI service...
+index-LYWbto7-.js:248 🤖 Sending AI chat request: Object
+1:1 Access to XMLHttpRequest at 'https://ntbk-ai-flask-api.onrender.com/api/ai/chat' from origin 'https://nobooker.netlify.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-LYWbto7-.js:248 ❌ AI chat error: Network Error
+CC @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 ❌ AI chat error occurred!
+j @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 ❌ Error type: Error
+j @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 ❌ Error message: AI chat failed
+j @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 ❌ Full error object: Error: AI chat failed
+    at CC (index-LYWbto7-.js:248:14999)
+    at async j (index-LYWbto7-.js:248:20225)
+j @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 🚨 OTHER ERROR: Setting status to asleep
+index-LYWbto7-.js:248 🔴 Status changed to: asleep
+index-LYWbto7-.js:248 💬 Error message added to chat history
+ntbk-ai-flask-api.onrender.com/api/ai/chat:1  Failed to load resource: net::ERR_FAILED
+index-LYWbto7-.js:248 🔔 AI service is asleep, changing status to waking...
+index-LYWbto7-.js:248 🟡 Status changed to: waking
+index-LYWbto7-.js:248 🔔 Attempting to wake up AI service...
+index-LYWbto7-.js:248 🔔 Pinging AI service to wake it up...
+index-LYWbto7-.js:248 🌐 Target URL: https://ntbk-ai-flask-api.onrender.com/health
+index-LYWbto7-.js:248 🔑 Using API Key: Present
+1:1 Access to fetch at 'https://ntbk-ai-flask-api.onrender.com/health' from origin 'https://nobooker.netlify.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ntbk-ai-flask-api.onrender.com/health:1  Failed to load resource: net::ERR_FAILED
+index-LYWbto7-.js:248 ⚠️ AI service ping failed!
+index-LYWbto7-.js:248 ❌ Error type: TypeError
+index-LYWbto7-.js:248 ❌ Error message: Failed to fetch
+index-LYWbto7-.js:248 ❌ Full error: TypeError: Failed to fetch
+    at NC (index-LYWbto7-.js:248:13645)
+    at j (index-LYWbto7-.js:248:19686)
+    at Object.ix (index-LYWbto7-.js:37:9855)
+    at lx (index-LYWbto7-.js:37:10009)
+    at cx (index-LYWbto7-.js:37:10066)
+    at sf (index-LYWbto7-.js:37:31446)
+    at sm (index-LYWbto7-.js:37:31863)
+    at index-LYWbto7-.js:37:36776
+    at Bu (index-LYWbto7-.js:40:36896)
+    at Ph (index-LYWbto7-.js:37:8991)
+index-LYWbto7-.js:248 🚨 NETWORK ERROR: The AI service is completely down or unreachable
+index-LYWbto7-.js:248 🚨 POSSIBLE CAUSES: Service crashed, domain changed, or network issue
+index-LYWbto7-.js:248 ❌ AI service wake-up failed: Failed to fetch
+index-LYWbto7-.js:248 🔴 Status remains: asleep (CORS issue)
+index-LYWbto7-.js:248 🤖 Sending chat message to AI service...
+index-LYWbto7-.js:248 🤖 Sending AI chat request: Object
+1:1 Access to XMLHttpRequest at 'https://ntbk-ai-flask-api.onrender.com/api/ai/chat' from origin 'https://nobooker.netlify.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-LYWbto7-.js:248 ❌ AI chat error: Network Error
+CC @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 ❌ AI chat error occurred!
+j @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 ❌ Error type: Error
+j @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 ❌ Error message: AI chat failed
+j @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 ❌ Full error object: Error: AI chat failed
+    at CC (index-LYWbto7-.js:248:14999)
+    at async j (index-LYWbto7-.js:248:20225)
+j @ index-LYWbto7-.js:248
+index-LYWbto7-.js:248 🚨 OTHER ERROR: Setting status to asleep
+index-LYWbto7-.js:248 🔴 Status changed to: asleep
+index-LYWbto7-.js:248 💬 Error message added to chat history
+ntbk-ai-flask-api.onrender.com/api/ai/chat:1  Failed to load resource: net::ERR_FAILED

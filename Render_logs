@@ -1,0 +1,168 @@
+==> Downloading cache...
+==> Cloning from https://github.com/idkwhatitshouldbeman/Notebooker
+==> Checking out commit 8ca79b58b2a10bb0947c92e947d5c55164856ec7 in branch main
+==> Transferred 5.5GB in 26s. Extraction took 38s.
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 879B done
+#1 DONE 0.0s
+#2 [internal] load metadata for docker.io/library/python:3.11-slim
+#2 ...
+#3 [auth] library/python:pull render-prod/docker-mirror-repository/library/python:pull token for us-west1-docker.pkg.dev
+#3 DONE 0.0s
+#2 [internal] load metadata for docker.io/library/python:3.11-slim
+#2 DONE 0.6s
+#4 [internal] load .dockerignore
+#4 transferring context: 593B done
+#4 DONE 0.0s
+#5 importing cache manifest from local:13996067921304115067
+#5 inferred cache manifest type: application/vnd.oci.image.index.v1+json done
+#5 DONE 0.0s
+#6 [1/7] FROM docker.io/library/python:3.11-slim@sha256:a0939570b38cddeb861b8e75d20b1c8218b21562b18f301171904b544e8cf228
+#6 resolve docker.io/library/python:3.11-slim@sha256:a0939570b38cddeb861b8e75d20b1c8218b21562b18f301171904b544e8cf228 0.0s done
+#6 DONE 0.0s
+#7 [internal] load build context
+#7 transferring context: 813.89kB 0.0s done
+#7 DONE 0.0s
+#8 [2/7] WORKDIR /app
+#8 CACHED
+#9 [3/7] RUN apt-get update && apt-get install -y     build-essential     curl     && rm -rf /var/lib/apt/lists/*
+#9 CACHED
+#10 [4/7] COPY requirements.txt .
+#10 CACHED
+#11 [5/7] RUN pip install --no-cache-dir -r requirements.txt
+#11 sha256:ce1261c6d567efa8e3b457673eeeb474a0a8066df6bb95ca9a6a94a31e219dd3 18.87MB / 29.77MB 0.2s
+#11 sha256:ce1261c6d567efa8e3b457673eeeb474a0a8066df6bb95ca9a6a94a31e219dd3 29.77MB / 29.77MB 0.3s done
+#11 extracting sha256:ce1261c6d567efa8e3b457673eeeb474a0a8066df6bb95ca9a6a94a31e219dd3
+#11 extracting sha256:ce1261c6d567efa8e3b457673eeeb474a0a8066df6bb95ca9a6a94a31e219dd3 0.9s done
+#11 sha256:11b89692b2085631f6e2407edd8545b033c8e6945837103875d6db484e945b6f 1.29MB / 1.29MB 0.0s done
+#11 extracting sha256:11b89692b2085631f6e2407edd8545b033c8e6945837103875d6db484e945b6f
+#11 extracting sha256:11b89692b2085631f6e2407edd8545b033c8e6945837103875d6db484e945b6f 0.3s done
+#11 sha256:764e05fe66b6768e40fa2a21d5108eceb8f3f8f2c32463d72c109c54dde0d5c1 14.64MB / 14.64MB 0.1s done
+#11 extracting sha256:764e05fe66b6768e40fa2a21d5108eceb8f3f8f2c32463d72c109c54dde0d5c1
+#11 extracting sha256:764e05fe66b6768e40fa2a21d5108eceb8f3f8f2c32463d72c109c54dde0d5c1 0.7s done
+#11 sha256:a4aefcec16c5bdc01af2ad1c5341b420d4179f3b825c0dc866367fb43f0d50ac 250B / 250B done
+#11 extracting sha256:a4aefcec16c5bdc01af2ad1c5341b420d4179f3b825c0dc866367fb43f0d50ac 0.0s done
+#11 sha256:4e15daa79e6a0fa740ec9d9cf97622f2ad872ce2665503610ebcc2dec0e319f9 92B / 92B done
+#11 extracting sha256:4e15daa79e6a0fa740ec9d9cf97622f2ad872ce2665503610ebcc2dec0e319f9 0.0s done
+#11 sha256:c453d2dd1b64f4aa01f2d6e3b98b9858dc96f2e4c9b098baf5f9ee08f8fb8f5e 19.92MB / 120.38MB 0.2s
+#11 sha256:c453d2dd1b64f4aa01f2d6e3b98b9858dc96f2e4c9b098baf5f9ee08f8fb8f5e 38.80MB / 120.38MB 0.3s
+#11 sha256:c453d2dd1b64f4aa01f2d6e3b98b9858dc96f2e4c9b098baf5f9ee08f8fb8f5e 55.57MB / 120.38MB 0.5s
+#11 sha256:c453d2dd1b64f4aa01f2d6e3b98b9858dc96f2e4c9b098baf5f9ee08f8fb8f5e 75.50MB / 120.38MB 0.6s
+#11 sha256:c453d2dd1b64f4aa01f2d6e3b98b9858dc96f2e4c9b098baf5f9ee08f8fb8f5e 93.32MB / 120.38MB 0.8s
+#11 sha256:c453d2dd1b64f4aa01f2d6e3b98b9858dc96f2e4c9b098baf5f9ee08f8fb8f5e 113.25MB / 120.38MB 0.9s
+#11 sha256:c453d2dd1b64f4aa01f2d6e3b98b9858dc96f2e4c9b098baf5f9ee08f8fb8f5e 120.38MB / 120.38MB 1.1s done
+#11 extracting sha256:c453d2dd1b64f4aa01f2d6e3b98b9858dc96f2e4c9b098baf5f9ee08f8fb8f5e
+#11 extracting sha256:c453d2dd1b64f4aa01f2d6e3b98b9858dc96f2e4c9b098baf5f9ee08f8fb8f5e 5.6s done
+#11 sha256:0cb138d1aaa948b87c27e64a2f1462490b37c6410ef94aeb0622b44d09dc4c68 630B / 630B done
+#11 extracting sha256:0cb138d1aaa948b87c27e64a2f1462490b37c6410ef94aeb0622b44d09dc4c68
+#11 extracting sha256:0cb138d1aaa948b87c27e64a2f1462490b37c6410ef94aeb0622b44d09dc4c68 2.4s done
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 41.94MB / 2.84GB 0.3s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 188.74MB / 2.84GB 1.5s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 338.69MB / 2.84GB 2.7s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 486.81MB / 2.84GB 3.9s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 632.29MB / 2.84GB 5.1s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 774.90MB / 2.84GB 6.3s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 920.65MB / 2.84GB 7.5s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 1.07GB / 2.84GB 8.7s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 1.21GB / 2.84GB 9.9s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 1.36GB / 2.84GB 11.1s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 1.50GB / 2.84GB 12.3s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 1.68GB / 2.84GB 13.8s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 1.83GB / 2.84GB 15.2s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 1.99GB / 2.84GB 16.5s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 2.14GB / 2.84GB 17.7s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 2.29GB / 2.84GB 18.9s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 2.45GB / 2.84GB 20.4s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 2.61GB / 2.84GB 21.9s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 2.76GB / 2.84GB 23.1s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 2.84GB / 2.84GB 28.4s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 2.84GB / 2.84GB 33.5s
+#11 sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 2.84GB / 2.84GB 37.8s done
+#11 extracting sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c
+#11 extracting sha256:bf89c643a5493a254a95130c57ed0ffc992b2c2fdd95eb01194cfb1d8478b92c 55.5s done
+#11 CACHED
+#12 [6/7] COPY . .
+#12 DONE 0.1s
+#13 [7/7] RUN mkdir -p /app/model_cache
+#13 DONE 0.1s
+#14 exporting to docker image format
+#14 exporting layers
+#14 exporting layers 0.1s done
+#14 exporting manifest sha256:a27f46711f7b16b9e76e61ed972c27517a7d85a89e5f005b9882becddc42f520 0.0s done
+#14 exporting config sha256:c83a7bbfe18be96acd5f72988f645ae6ea5cf3c12dea2d6124d6afa0dd9a0c60 0.0s done
+#14 DONE 36.9s
+#15 exporting cache to client directory
+#15 preparing build cache for export
+#15 writing cache manifest sha256:b8e1873e2ea1fe100cb7d44d61833d32320da9cf8882b18dff7dd3138aa5fe08
+#15 writing cache manifest sha256:b8e1873e2ea1fe100cb7d44d61833d32320da9cf8882b18dff7dd3138aa5fe08 0.3s done
+#15 DONE 3.6s
+Pushing image to registry...
+Upload succeeded
+==> Deploying...
+==> No open ports detected, continuing to scan...
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.3.3 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+Traceback (most recent call last):  File "/usr/local/bin/uvicorn", line 8, in <module>
+    sys.exit(main())
+  File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1462, in __call__
+    return self.main(*args, **kwargs)
+  File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1383, in main
+    rv = self.invoke(ctx)
+  File "/usr/local/lib/python3.11/site-packages/click/core.py", line 1246, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+  File "/usr/local/lib/python3.11/site-packages/click/core.py", line 814, in invoke
+    return callback(*args, **kwargs)
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 416, in main
+    run(
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/main.py", line 587, in run
+    server.run()
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 61, in run
+    return asyncio.run(self.serve(sockets=sockets))
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 68, in serve
+    config.load()
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/config.py", line 467, in load
+    self.loaded_app = import_from_string(self.app)
+  File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 21, in import_from_string
+    module = importlib.import_module(module_str)
+  File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "/app/main.py", line 21, in <module>
+    from models.llama_agent import FlanT5Agent
+  File "/app/models/llama_agent.py", line 13, in <module>
+    import torch
+  File "/usr/local/lib/python3.11/site-packages/torch/__init__.py", line 1382, in <module>
+    from .functional import *  # noqa: F403
+  File "/usr/local/lib/python3.11/site-packages/torch/functional.py", line 7, in <module>
+    import torch.nn.functional as F
+  File "/usr/local/lib/python3.11/site-packages/torch/nn/__init__.py", line 1, in <module>
+    from .modules import *  # noqa: F403
+  File "/usr/local/lib/python3.11/site-packages/torch/nn/modules/__init__.py", line 35, in <module>
+    from .transformer import TransformerEncoder, TransformerDecoder, \
+  File "/usr/local/lib/python3.11/site-packages/torch/nn/modules/transformer.py", line 20, in <module>
+    device: torch.device = torch.device(torch._C._get_default_device()),  # torch.device('cpu'),
+/usr/local/lib/python3.11/site-packages/torch/nn/modules/transformer.py:20: UserWarning: Failed to initialize NumPy: _ARRAY_API not found (Triggered internally at ../torch/csrc/utils/tensor_numpy.cpp:84.)
+  device: torch.device = torch.device(torch._C._get_default_device()),  # torch.device('cpu'),
+{"asctime": "2025-09-28 19:11:51,374", "name": "ntbk_ai", "levelname": "INFO", "message": "{\"level\": \"info\", \"event\": \"Logging initialized\", \"logger\": \"ntbk_ai\", \"timestamp\": \"2025-09-28T19:11:51.374247Z\"}"}
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:56224 - "HEAD / HTTP/1.1" 404 Not Found
+==> Your service is live 🎉
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://ntbk-ai.onrender.com
+==> 
+==> ///////////////////////////////////////////////////////////
+INFO:     10.214.167.101:0 - "GET / HTTP/1.1" 404 Not Found

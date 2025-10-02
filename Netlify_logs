@@ -1,0 +1,141 @@
+5:45:18 PM: build-image version: e8c4c0b200e9701a8a8825b9ff63ea7e9f1740e2 (noble)
+5:45:18 PM: buildbot version: a8227f684d13e2f14c4dff2ff89b1b5fbedbc9d9
+5:45:18 PM: Fetching cached dependencies
+5:45:18 PM: Starting to download cache of 5.0GB (Last modified: 2025-09-27 21:15:41 +0000 UTC)
+5:45:35 PM: Finished downloading cache in 16.272s
+5:45:35 PM: Starting to extract cache
+5:46:18 PM: Finished extracting cache in 43.448s
+5:46:18 PM: Finished fetching cache in 1m0.002s
+5:46:18 PM: Starting to prepare the repo for build
+5:46:18 PM: Preparing Git Reference refs/heads/main
+5:46:23 PM: Custom publish path detected. Proceeding with the specified path: 'frontend/dist'
+5:46:23 PM: Custom functions path detected. Proceeding with the specified path: 'frontend/netlify/functions'
+5:46:23 PM: Custom build command detected. Proceeding with the specified command: 'npm run build'
+5:46:23 PM: Starting to install dependencies
+5:46:23 PM: Started restoring cached python cache
+5:46:23 PM: Finished restoring cached python cache
+5:46:23 PM: Started restoring cached ruby cache
+5:46:24 PM: Finished restoring cached ruby cache
+5:46:24 PM: Started restoring cached go cache
+5:46:25 PM: Finished restoring cached go cache
+5:46:25 PM: Started restoring cached Node.js version
+5:46:26 PM: Finished restoring cached Node.js version
+5:46:26 PM: v18.20.8 is already installed.
+5:46:26 PM: Now using node v18.20.8 (npm v10.8.2)
+5:46:26 PM: Enabling Node.js Corepack
+5:46:26 PM: Started restoring cached build plugins
+5:46:26 PM: Finished restoring cached build plugins
+5:46:26 PM: Started restoring cached corepack dependencies
+5:46:26 PM: Finished restoring cached corepack dependencies
+5:46:26 PM: No npm workspaces detected
+5:46:26 PM: Started restoring cached node modules
+5:46:27 PM: Finished restoring cached node modules
+5:46:27 PM: Installing npm packages using npm version 10.8.2
+5:46:28 PM: up to date in 680ms
+5:46:28 PM: npm packages installed
+5:46:29 PM: Successfully installed dependencies
+5:46:29 PM: Starting build script
+5:46:29 PM: Detected 1 framework(s)
+5:46:29 PM: "vite" at version "5.4.20"
+5:46:29 PM: Section completed: initializing
+Building
+Complete
+5:46:30 PM: Netlify Build                                                 
+5:46:30 PM: ────────────────────────────────────────────────────────────────
+5:46:30 PM: ​
+5:46:30 PM: ❯ Version
+5:46:30 PM:   @netlify/build 35.1.8
+5:46:30 PM: ​
+5:46:30 PM: ❯ Flags
+5:46:30 PM:   accountId: 67f596dc33aaa955102c6d91
+5:46:30 PM:   baseRelDir: true
+5:46:30 PM:   buildId: 68dc799de73ab42d74ce4445
+5:46:30 PM:   deployId: 68dc799de73ab42d74ce4447
+5:46:31 PM: ​
+5:46:31 PM: ❯ Current directory
+5:46:31 PM:   /opt/build/repo/frontend
+5:46:31 PM: ​
+5:46:31 PM: ❯ Config file
+5:46:31 PM:   /opt/build/repo/frontend/netlify.toml
+5:46:31 PM: ​
+5:46:31 PM: ❯ Context
+5:46:31 PM:   production
+5:46:31 PM: ​
+5:46:31 PM: build.command from netlify.toml                               
+5:46:31 PM: ────────────────────────────────────────────────────────────────
+5:46:31 PM: ​
+5:46:31 PM: $ npm run build
+5:46:31 PM: > notebooker-frontend@1.0.0 build
+5:46:31 PM: > vite build
+5:46:32 PM: vite v5.4.20 building for production...
+5:46:32 PM: transforming...
+5:46:34 PM: ✓ 1727 modules transformed.
+5:46:35 PM: rendering chunks...
+5:46:35 PM: computing gzip size...
+5:46:35 PM: dist/index.html                   0.49 kB │ gzip:   0.32 kB
+5:46:35 PM: dist/assets/index-D4SbACYc.css   68.28 kB │ gzip:  12.23 kB
+5:46:35 PM: dist/assets/index-LYWbto7-.js   423.70 kB │ gzip: 131.06 kB
+5:46:35 PM: ✓ built in 3.11s
+5:46:35 PM: ​
+5:46:35 PM: (build.command completed in 4.1s)
+5:46:35 PM: ​
+5:46:35 PM: Functions bundling                                            
+5:46:35 PM: ────────────────────────────────────────────────────────────────
+5:46:35 PM: ​
+5:46:35 PM: The Netlify Functions setting targets a non-existing directory: netlify/functions
+5:46:35 PM: ​
+5:46:35 PM: (Functions bundling completed in 1ms)
+5:46:35 PM: ​
+5:46:35 PM: (Netlify Build completed in 5s)
+5:46:36 PM: Section completed: building
+Deploying
+Complete
+5:46:35 PM: Deploy site                                                   
+5:46:35 PM: ────────────────────────────────────────────────────────────────
+5:46:35 PM: ​
+5:46:35 PM: Starting to deploy site from 'frontend/dist'
+5:46:35 PM: Calculating files to upload
+5:46:35 PM: 0 new file(s) to upload
+5:46:35 PM: 0 new function(s) to upload
+5:46:35 PM: Section completed: deploying
+5:46:35 PM: Site deploy was successfully initiated
+5:46:35 PM: ​
+5:46:35 PM: (Deploy site completed in 763ms)
+Cleanup
+Complete
+5:46:35 PM: Netlify Build Complete                                        
+5:46:35 PM: ────────────────────────────────────────────────────────────────
+5:46:35 PM: ​
+5:46:36 PM: Caching artifacts
+5:46:36 PM: Started saving node modules
+5:46:36 PM: Finished saving node modules
+5:46:36 PM: Started saving build plugins
+5:46:36 PM: Finished saving build plugins
+5:46:36 PM: Started saving bun cache
+5:46:36 PM: Finished saving bun cache
+5:46:36 PM: Started saving go cache
+5:46:36 PM: Finished saving go cache
+5:46:36 PM: Started saving python cache
+5:46:36 PM: Finished saving python cache
+5:46:36 PM: Started saving ruby cache
+5:46:36 PM: Finished saving ruby cache
+5:46:36 PM: Started saving corepack cache
+5:46:36 PM: Finished saving corepack cache
+5:46:36 PM: Started saving emacs cask dependencies
+5:46:36 PM: Finished saving emacs cask dependencies
+5:46:36 PM: Started saving maven dependencies
+5:46:36 PM: Finished saving maven dependencies
+5:46:36 PM: Started saving boot dependencies
+5:46:36 PM: Finished saving boot dependencies
+5:46:36 PM: Started saving rust rustup cache
+5:46:36 PM: Finished saving rust rustup cache
+5:46:36 PM: Build script success
+Post-processing
+Complete
+5:46:35 PM: Starting post processing
+5:46:36 PM: Skipping form detection
+5:46:36 PM: Post processing - header rules
+5:46:36 PM: Post processing - redirect rules
+5:46:36 PM: Post processing done
+5:46:36 PM: Section completed: postprocessing
+5:46:36 PM: Site is live ✨

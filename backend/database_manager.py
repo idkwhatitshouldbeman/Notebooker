@@ -18,16 +18,19 @@ class SmartNotebookerDB:
     """Smart database manager that works with both Supabase and SQLite"""
     
     def __init__(self):
+        logger.info("🗄️ Initializing Smart Database Manager")
         self.use_supabase = False
         self.db_path = "notebooker.db"
         
         # Try to use Supabase if credentials are available
+        logger.info("🔍 Checking for Supabase configuration...")
         if self._try_supabase():
             self.use_supabase = True
-            logger.info("Using Supabase database")
+            logger.info("✅ Using Supabase database")
         else:
-            logger.info("Using SQLite database for local development")
+            logger.info("📁 Using SQLite database for local development")
             self._init_sqlite()
+        logger.info("🎉 Database manager initialized successfully")
     
     def _try_supabase(self):
         """Try to initialize Supabase connection"""

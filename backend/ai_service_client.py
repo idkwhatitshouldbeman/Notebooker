@@ -52,20 +52,22 @@ class AIServiceClient:
     """Client for communicating with AI Automation Service"""
     
     def __init__(self, base_url: str = None, api_key: str = None):
-        self.base_url = base_url or "https://your-render-app-name.onrender.com"
-        self.api_key = api_key
+        self.base_url = base_url or "https://ntbk-ai-flask-api.onrender.com"
+        self.api_key = api_key or "notebooker-api-key-2024"
         self.session = requests.Session()
         
         # Set up authentication if API key provided
         if self.api_key:
             self.session.headers.update({
-                'Authorization': f'Bearer {self.api_key}',
+                'X-API-Key': self.api_key,
                 'Content-Type': 'application/json'
             })
         else:
             self.session.headers.update({
                 'Content-Type': 'application/json'
             })
+        
+        logger.info(f"🔧 AI Service Client initialized", base_url=self.base_url, has_api_key=bool(self.api_key))
     
     def create_task(self, prompt_context: str, agent_config: AgentConfig = None, 
                    external_tool_endpoints: Dict[str, str] = None) -> str:
@@ -85,26 +87,31 @@ class AIServiceClient:
         )
         
         try:
+            logger.info(f"🚀 Creating AI task", task_id=task_id, base_url=self.base_url)
             start_time = time.time()
             response = self.session.post(
-                f"{self.base_url}/agentic-task",
-                json=request_data.__dict__,
+                f"{self.base_url}/api/ai/chat",
+                json={
+                    "message": prompt_context,
+                    "projectId": "default",
+                    "context": "Engineering notebook assistance"
+                },
                 timeout=30
             )
             latency = time.time() - start_time
             
-            logger.info(f"AI Service API call - Task: {task_id}, Latency: {latency:.2f}s, Status: {response.status_code}")
+            logger.info(f"📡 AI Service API call completed", task_id=task_id, latency=f"{latency:.2f}s", status=response.status_code)
             
             if response.status_code == 200:
                 result = response.json()
-                logger.info(f"Task created successfully: {task_id}")
+                logger.info(f"✅ Task created successfully", task_id=task_id)
                 return task_id
             else:
-                logger.error(f"Failed to create task: {response.status_code} - {response.text}")
+                logger.error(f"❌ Failed to create task", status=response.status_code, response=response.text)
                 raise Exception(f"AI Service error: {response.status_code}")
                 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Network error creating task {task_id}: {e}")
+            logger.error(f"🌐 Network error creating task", task_id=task_id, error=str(e))
             raise Exception(f"Network error: {e}")
     
     def get_task_status(self, task_id: str) -> TaskResponse:

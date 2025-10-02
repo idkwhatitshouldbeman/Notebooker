@@ -3,8 +3,8 @@ services:
     name: ntbk-ai-flask-api
     env: py
     plan: starter
-    buildCommand: pip install -r requirements.txt
-    startCommand: py app.py
+    buildCommand: pip install "numpy<2.0.0" && pip install -r requirements.txt
+    startCommand: python app.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -17,9 +17,23 @@ services:
       - key: API_KEY
         value: notebooker-api-key-2024
       - key: SECRET_KEY
-        value: your-secret-key-change-in-production
-      - key: AI_SERVICE_URL
-        value: https://your-ai-service.onrender.com
+        value: notebooker-production-secret-key-2024
+      - key: MODEL_NAME
+        value: google/flan-t5-small
+      - key: MODEL_CACHE_DIR
+        value: ./model_cache
+      - key: MAX_CONCURRENT_TASKS
+        value: 5
+      - key: TASK_TIMEOUT
+        value: 300
+      - key: EXTERNAL_TOOL_TIMEOUT
+        value: 30
+      - key: MAX_TOOL_RETRIES
+        value: 3
+      - key: RATE_LIMIT_REQUESTS
+        value: 100
+      - key: RATE_LIMIT_WINDOW
+        value: 3600
       - key: SUPABASE_URL
         value: ""
       - key: SUPABASE_KEY

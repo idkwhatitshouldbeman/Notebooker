@@ -50,21 +50,25 @@ class FlanT5Agent:
         self.tool_results = {}
         
     async def initialize(self):
-        """Initialize the FLAN-T5 model and tokenizer"""
+        """Initialize the FLAN-T5 model and tokenizer with error handling"""
         if self.is_initialized:
+            logger.info("🔧 FLAN-T5 model already initialized")
             return
             
         try:
-            logger.info("Initializing FLAN-T5 Small model", device=self.device)
+            logger.info("🚀 Initializing FLAN-T5 Small model", device=self.device)
             
             # Load tokenizer - FLAN-T5 uses T5 tokenizer
+            logger.info("📥 Loading tokenizer...")
             self.tokenizer = AutoTokenizer.from_pretrained(
                 settings.MODEL_NAME,
                 cache_dir=settings.MODEL_CACHE_DIR,
                 trust_remote_code=True
             )
+            logger.info("✅ Tokenizer loaded successfully")
             
             # Load model - FLAN-T5 is a sequence-to-sequence model
+            logger.info("📥 Loading FLAN-T5 model...")
             self.model = AutoModelForSeq2SeqLM.from_pretrained(
                 settings.MODEL_NAME,
                 cache_dir=settings.MODEL_CACHE_DIR,
@@ -72,19 +76,40 @@ class FlanT5Agent:
                 device_map="auto" if self.device == "cuda" else None,
                 trust_remote_code=True
             )
+            logger.info("✅ Model loaded successfully")
             
             # Move model to device if not using device_map
             if self.device == "cuda" and not hasattr(self.model, 'hf_device_map'):
+                logger.info("🔄 Moving model to CUDA device...")
                 self.model = self.model.to(self.device)
+                logger.info("✅ Model moved to CUDA")
             
             self.is_initialized = True
-            logger.info("FLAN-T5 model initialized successfully", 
+            logger.info("🎉 FLAN-T5 model initialized successfully", 
                        model_size="80M parameters", 
                        download_size="300MB")
             
         except Exception as e:
-            logger.error("Failed to initialize FLAN-T5 model", error=str(e))
-            raise
+            logger.error("❌ Failed to initialize FLAN-T5 model", error=str(e))
+            logger.error("🔧 Attempting fallback initialization...")
+            
+            # Fallback: try with minimal configuration
+            try:
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    "google/flan-t5-small",
+                    trust_remote_code=True
+                )
+                self.model = AutoModelForSeq2SeqLM.from_pretrained(
+                    "google/flan-t5-small",
+                    torch_dtype=torch.float32,
+                    trust_remote_code=True
+                )
+                self.is_initialized = True
+                logger.info("✅ Fallback initialization successful")
+            except Exception as fallback_error:
+                logger.error("❌ Fallback initialization also failed", error=str(fallback_error))
+                # Don't raise - allow service to continue without AI
+                self.is_initialized = False
     
     def configure(self, **kwargs):
         """Configure agent parameters"""
@@ -104,30 +129,57 @@ class FlanT5Agent:
         """
         Process an agentic task with autonomous multi-step workflows using FLAN-T5
         """
+        logger.info("🤖 Starting AI task processing", task_id=task_context.get("task_id"))
+        
         if not self.is_initialized:
+            logger.info("🔧 Model not initialized, attempting initialization...")
             await self.initialize()
         
         self.current_task_id = task_context.get("task_id")
         self.conversation_history = task_context.get("conversation_history", [])
         
         try:
-            logger.info("Starting agentic task processing with FLAN-T5", task_id=self.current_task_id)
+            logger.info("🚀 Starting agentic task processing with FLAN-T5", task_id=self.current_task_id)
+            
+            # Check if model is available
+            if not self.is_initialized or not self.model:
+                logger.warning("⚠️ AI model not available, using fallback response")
+                return {
+                    "status": "completed",
+                    "agent_reply": f"I'm here to help with your engineering project! Based on your request: '{prompt_context}', I can assist with technical documentation, project planning, and content analysis. However, my AI model is currently unavailable, so I'm providing this basic response. Please try again later when the AI service is fully loaded.",
+                    "next_step": {
+                        "action": "complete",
+                        "instructions": "Task completed with fallback response"
+                    },
+                    "logs": "AI model not available - using fallback",
+                    "tokens_used": 0
+                }
             
             # FLAN-T5 excels at reasoning tasks, so we'll structure the prompt accordingly
+            logger.info("📝 Building reasoning prompt...")
             reasoning_prompt = self._build_reasoning_prompt(prompt_context, external_tools)
+            logger.info("✅ Reasoning prompt built")
             
             # Generate the main response using FLAN-T5's reasoning capabilities
+            logger.info("🧠 Generating AI response...")
             main_response = await self._generate_reasoning_response(reasoning_prompt)
+            logger.info("✅ AI response generated")
             
             # If external tools are available, try to use them
             if external_tools:
+                logger.info("🔧 Enhancing response with external tools...")
                 enhanced_response = await self._enhance_with_tools(main_response, external_tools)
+                logger.info("✅ Response enhanced with tools")
             else:
                 enhanced_response = main_response
+                logger.info("ℹ️ No external tools available, using base response")
             
             # Generate final structured response
+            logger.info("📋 Generating final structured response...")
             final_response = await self._generate_final_response(enhanced_response, prompt_context)
+            logger.info("✅ Final response generated")
             
+            logger.info("🎉 Task processing completed successfully")
             return {
                 "status": "completed",
                 "agent_reply": final_response,
@@ -140,10 +192,10 @@ class FlanT5Agent:
             }
             
         except Exception as e:
-            logger.error("Task processing failed", task_id=self.current_task_id, error=str(e))
+            logger.error("❌ Task processing failed", task_id=self.current_task_id, error=str(e))
             return {
                 "status": "failed",
-                "agent_reply": "",
+                "agent_reply": f"I encountered an error while processing your request: {str(e)}. Please try again or contact support if the issue persists.",
                 "next_step": {
                     "action": "retry",
                     "instructions": f"Task failed: {str(e)}"
