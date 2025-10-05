@@ -403,9 +403,19 @@ def logout():
         logger.error(f"Logout error: {e}")
         return jsonify({'success': False, 'error': 'Logout failed'})
 
-@app.route('/health', methods=['GET'])
+@app.route('/health', methods=['GET', 'OPTIONS'])
 def health_check():
     """Health check endpoint for monitoring"""
+    if request.method == 'OPTIONS':
+        # Handle CORS preflight request
+        response = make_response()
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'https://nobooker.netlify.app')
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, X-API-Key, Authorization, Access-Control-Allow-Origin'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        return response
+    
     logger.info("🏥 Health check endpoint called")
     try:
         # Check if services are initialized
@@ -651,6 +661,47 @@ def create_project():
             flash(f'Error creating project: {str(e)}', 'error')
             return render_template('create_project.html')
 
+@app.route('/api/projects', methods=['GET'])
+@require_api_key
+def get_projects_api():
+    """Get all projects for the authenticated user via API"""
+    try:
+        logger.info("📂 API: Fetching projects...")
+        
+        # For API calls, we need to get user_id from the request or use a default
+        # Since this is an API endpoint, we'll return sample data for now
+        # In a real implementation, you'd authenticate the user via API key
+        
+        sample_projects = [
+            {
+                'id': 1,
+                'name': 'Sample Robotics Project',
+                'description': 'A sample robotics engineering project',
+                'status': 'active',
+                'created_at': '2024-01-15T10:30:00Z',
+                'updated_at': '2024-01-15T10:30:00Z'
+            },
+            {
+                'id': 2,
+                'name': 'AI Integration Study',
+                'description': 'Research project on AI integration in engineering workflows',
+                'status': 'planning',
+                'created_at': '2024-01-10T14:20:00Z',
+                'updated_at': '2024-01-10T14:20:00Z'
+            }
+        ]
+        
+        logger.info(f"✅ API: Returning {len(sample_projects)} projects")
+        return jsonify({
+            'status': 'success',
+            'projects': sample_projects,
+            'count': len(sample_projects)
+        })
+    
+    except Exception as e:
+        logger.error(f"❌ API: Error fetching projects: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/api/projects', methods=['POST'])
 def create_project_api():
     """Create a new project via API"""
@@ -895,10 +946,20 @@ def switch_model():
 # AI Service is now integrated directly into Flask - no external service needed
 
 # New API endpoints for frontend integration
-@app.route('/api/ai/chat', methods=['POST'])
+@app.route('/api/ai/chat', methods=['POST', 'OPTIONS'])
 @require_api_key
 def ai_chat():
     """AI chat endpoint for conversational assistance"""
+    if request.method == 'OPTIONS':
+        # Handle CORS preflight request
+        response = make_response()
+        response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', 'https://nobooker.netlify.app')
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, X-API-Key, Authorization, Access-Control-Allow-Origin'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        return response
+    
     try:
         logger.info("🤖 AI Chat endpoint called")
         data = request.get_json()
