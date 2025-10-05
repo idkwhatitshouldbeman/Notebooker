@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Render AI Service Configuration
-const AI_SERVICE_URL = 'https://ntbk-ai-flask-api.onrender.com';
+const AI_SERVICE_URL = 'https://ntbk-ai.onrender.com';
 const API_KEY = 'notebooker-api-key-2024';
 
 console.log('🔧 AI Service Configuration:', {

@@ -56,7 +56,11 @@ const Project: React.FC = () => {
 
   const loadProject = async (projectId: string) => {
     try {
-      const response = await axios.get(`/api/projects/${projectId}`);
+      const response = await axios.get(`https://ntbk-ai.onrender.com/api/projects/${projectId}`, {
+        headers: {
+          'X-API-Key': 'notebooker-api-key-2024'
+        }
+      });
       if (response.data.success) {
         setProject(response.data.project);
       } else {

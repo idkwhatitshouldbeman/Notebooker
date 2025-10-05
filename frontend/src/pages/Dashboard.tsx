@@ -55,7 +55,11 @@ const Dashboard: React.FC = () => {
     console.log('📂 Loading projects...');
     try {
       console.log('🌐 Attempting to fetch projects from API...');
-      const response = await axios.get('/api/projects');
+      const response = await axios.get('https://ntbk-ai.onrender.com/api/projects', {
+        headers: {
+          'X-API-Key': 'notebooker-api-key-2024'
+        }
+      });
       console.log('✅ API response received:', response.data);
       
       if (response.data.success) {

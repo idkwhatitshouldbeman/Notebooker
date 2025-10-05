@@ -33,7 +33,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')  # Change this in production
+app.secret_key = 'notebooker-production-secret-key-2024'  # Hardcoded for production
 
 # Configure CORS - Fixed for production
 CORS(app, 
@@ -50,8 +50,8 @@ CORS(app,
      supports_credentials=True
 )
 
-# API Key for authentication
-API_KEY = os.environ.get('API_KEY', 'notebooker-api-key-2024')
+# API Key for authentication - Hardcoded for production
+API_KEY = 'notebooker-api-key-2024'
 
 # Enable template auto-reload in debug mode
 app.config['TEMPLATES_AUTO_RELOAD'] = True
